@@ -1,0 +1,2507 @@
+[
+     {
+    "id": "realtime",
+    "type": "generated",
+    "title": "Realtime",
+    "content": "Communicate with a GPT-4o class model live, in real time, over WebSocket.\nProduces both audio and text transcriptions.\n[Learn more about the Realtime API](/docs/guides/realtime).\n",
+    "navigationGroup": "realtime",
+    "url": "/docs/api-reference/realtime",
+    "beta": true,
+    "sections": []
+}, {
+    "id": "realtime-client-events",
+    "type": "generated",
+    "title": "Client events",
+    "content": "These are events that the OpenAI Realtime WebSocket server will accept from the client.\n",
+    "navigationGroup": "realtime",
+    "url": "/docs/api-reference/realtime-client-events",
+    "sections": [{
+        "type": "objectgroup",
+        "title": "session",
+        "url": "/docs/api-reference/realtime-client-events/session",
+        "relativeUrl": "realtime-client-events/session",
+        "indent": 0
+    }, {
+        "type": "object",
+        "navTitle": ".update",
+        "title": "session.update",
+        "content": "Send this event to update the session’s default configuration. The client may send this event at any time to update the session configuration, and any field may be updated at any time, except for 'voice'. The server will respond with a `session.updated` event that shows the full effective configuration. Only fields that are present are updated, thus the correct way to clear a field like 'instructions' is to pass an empty string.",
+        "url": "/docs/api-reference/realtime-client-events/session/update",
+        "relativeUrl": "realtime-client-events/session/update",
+        "definition": {
+            "type": "object",
+            "description": "Send this event to update the session’s default configuration. The client may send this event at any time to update the session configuration, and any field may be updated at any time, except for 'voice'. The server will respond with a `session.updated` event that shows the full effective configuration. Only fields that are present are updated, thus the correct way to clear a field like 'instructions' is to pass an empty string.",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": "Optional client-generated ID used to identify this event."
+                },
+                "type": {
+                    "type": "string",
+                    "description": "The event type, must be 'session.update'"
+                },
+                "session": {
+                    "type": "object",
+                    "description": "Realtime session object configuration.",
+                    "properties": {
+                        "modalities": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "The set of modalities the model can respond with. To disable audio,\nset this to ['text']."
+                        },
+                        "instructions": {
+                            "type": "string",
+                            "description": "The default system instructions (i.e. system message) prepended to model \ncalls. This field allows the client to guide the model on desired \nresponses. The model can be instructed on response content and format, \n(e.g. \"be extremely succinct\", \"act friendly\", \"here are examples of good \nresponses\") and on audio behavior (e.g. \"talk quickly\", \"inject emotion \ninto your voice\", \"laugh frequently\"). The instructions are not guaranteed \nto be followed by the model, but they provide guidance to the model on the \ndesired behavior.\n\nNote that the server sets default instructions which will be used if this \nfield is not set and are visible in the `session.created` event at the \nstart of the session.\n"
+                        },
+                        "voice": {
+                            "type": "string",
+                            "enum": ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"],
+                            "description": "The voice the model uses to respond. Supported voices are `alloy`, `ash`,\n`ballad`, `coral`, `echo`, `sage`, `shimmer`, and `verse`. Cannot be \nchanged once the model has responded with audio at least once.\n"
+                        },
+                        "input_audio_format": {
+                            "type": "string",
+                            "description": "The format of input audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        "output_audio_format": {
+                            "type": "string",
+                            "description": "The format of output audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        "input_audio_transcription": {
+                            "type": "object",
+                            "description": "Configuration for input audio transcription, defaults to off and can be \nset to `null` to turn off once on. Input audio transcription is not native \nto the model, since the model consumes audio directly. Transcription runs \nasynchronously through Whisper and should be treated as rough guidance \nrather than the representation understood by the model.\n",
+                            "properties": {
+                                "model": {
+                                    "type": "string",
+                                    "description": "The model to use for transcription, `whisper-1` is the only currently \nsupported model.\n"
+                                }
+                            }
+                        },
+                        "turn_detection": {
+                            "type": "object",
+                            "description": "Configuration for turn detection. Can be set to `null` to turn off. Server \nVAD means that the model will detect the start and end of speech based on \naudio volume and respond at the end of user speech.\n",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "description": "Type of turn detection, only `server_vad` is currently supported.\n"
+                                },
+                                "threshold": {
+                                    "type": "number",
+                                    "description": "Activation threshold for VAD (0.0 to 1.0), this defaults to 0.5. A \nhigher threshold will require louder audio to activate the model, and \nthus might perform better in noisy environments.\n"
+                                },
+                                "prefix_padding_ms": {
+                                    "type": "integer",
+                                    "description": "Amount of audio to include before the VAD detected speech (in \nmilliseconds). Defaults to 300ms.\n"
+                                },
+                                "silence_duration_ms": {
+                                    "type": "integer",
+                                    "description": "Duration of silence to detect speech stop (in milliseconds). Defaults \nto 500ms. With shorter values the model will respond more quickly, \nbut may jump in on short pauses from the user.\n"
+                                }
+                            }
+                        },
+                        "tools": {
+                            "type": "array",
+                            "description": "Tools (functions) available to the model.",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "description": "The type of the tool, i.e. `function`."
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "The name of the function."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "The description of the function, including guidance on when and how \nto call it, and guidance about what to tell the user when calling \n(if anything).\n"
+                                    },
+                                    "parameters": {
+                                        "type": "object",
+                                        "description": "Parameters of the function in JSON Schema."
+                                    }
+                                }
+                            }
+                        },
+                        "tool_choice": {
+                            "type": "string",
+                            "description": "How the model chooses tools. Options are `auto`, `none`, `required`, or \nspecify a function.\n"
+                        },
+                        "temperature": {
+                            "type": "number",
+                            "description": "Sampling temperature for the model, limited to [0.6, 1.2]. Defaults to 0.8.\n"
+                        },
+                        "max_response_output_tokens": {
+                            "oneOf": [{
+                                "type": "integer"
+                            }, {
+                                "type": "string",
+                                "enum": ["inf"]
+                            }],
+                            "description": "Maximum number of output tokens for a single assistant response,\ninclusive of tool calls. Provide an integer between 1 and 4096 to\nlimit output tokens, or `inf` for the maximum available tokens for a\ngiven model. Defaults to `inf`.\n"
+                        }
+                    }
+                }
+            },
+            "required": ["type", "session"],
+            "x-oaiMeta": {
+                "name": "session.update",
+                "group": "realtime",
+                "example": {
+                    "event_id": "event_123",
+                    "type": "session.update",
+                    "session": {
+                        "modalities": ["text", "audio"],
+                        "instructions": "Your knowledge cutoff is 2023-10. You are a helpful assistant.",
+                        "voice": "alloy",
+                        "input_audio_format": "pcm16",
+                        "output_audio_format": "pcm16",
+                        "input_audio_transcription": {
+                            "model": "whisper-1"
+                        },
+                        "turn_detection": {
+                            "type": "server_vad",
+                            "threshold": 0.5,
+                            "prefix_padding_ms": 300,
+                            "silence_duration_ms": 500
+                        },
+                        "tools": [
+                            {
+                                "type": "function",
+                                "name": "get_weather",
+                                "description": "Get the current weather for a location, tell the user you are fetching the weather.",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {
+                                        "location": { "type": "string" }
+                                    },
+                                    "required": ["location"]
+                                }
+                            }
+                        ],
+                        "tool_choice": "auto",
+                        "temperature": 0.8,
+                        "max_response_output_tokens": "inf"
+                    }
+                }
+                }
+        },
+        "indent": 1
+    }, {
+        "type": "objectgroup",
+        "title": "input_audio_buffer",
+        "url": "/docs/api-reference/realtime-client-events/input_audio_buffer",
+        "relativeUrl": "realtime-client-events/input_audio_buffer",
+        "indent": 0
+    }, {
+        "type": "object",
+        "navTitle": ".append",
+        "title": "input_audio_buffer.append",
+        "content": "Send this event to append audio bytes to the input audio buffer. The audio buffer is temporary storage you can write to and later commit. In Server VAD mode, the audio buffer is used to detect speech and the server will decide when to commit. When Server VAD is disabled, you must commit the audio buffer manually.\nThe client may choose how much audio to place in each event up to a maximum of 15 MiB, for example streaming smaller chunks from the client may allow the VAD to be more responsive. Unlike made other client events, the server will not send a confirmation response to this event.",
+        "url": "/docs/api-reference/realtime-client-events/input_audio_buffer/append",
+        "relativeUrl": "realtime-client-events/input_audio_buffer/append",
+        "definition": {
+            "type": "object",
+            "description": "Send this event to append audio bytes to the input audio buffer. The audio buffer is temporary storage you can write to and later commit. In Server VAD mode, the audio buffer is used to detect speech and the server will decide when to commit. When Server VAD is disabled, you must commit the audio buffer manually.\nThe client may choose how much audio to place in each event up to a maximum of 15 MiB, for example streaming smaller chunks from the client may allow the VAD to be more responsive. Unlike made other client events, the server will not send a confirmation response to this event.",
+            "properties": {
+                "event_id": {
+                    "type": "string",
+                    "description": "Optional client-generated ID used to identify this event."
+                },
+                "type": {
+                    "type": "string",
+                    "description": 'The event type, must be "input_audio_buffer.append".'
+                },
+                "audio": {
+                    "type": "string",
+                    "description": "Base64-encoded audio bytes. This must be in the format specified by the `input_audio_format` field in the session configuration."
+                }
+            },
+            "required": ["type", "audio"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.append",
+                group: "realtime",
+                example: '{\n    "event_id": "event_456",\n    "type": "input_audio_buffer.append",\n    "audio": "Base64EncodedAudioData"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".commit",
+        title: "input_audio_buffer.commit",
+        content: "Send this event to commit the user input audio buffer, which will create a new user message item in the conversation. This event will produce an error if the input audio buffer is empty. When in Server VAD mode, the client does not need to send this event, the server will commit the audio buffer automatically.\nCommitting the input audio buffer will trigger input audio transcription (if enabled in session configuration), but it will not create a response from the model. The server will respond with an `input_audio_buffer.committed` event.",
+        url: "/docs/api-reference/realtime-client-events/input_audio_buffer/commit",
+        relativeUrl: "realtime-client-events/input_audio_buffer/commit",
+        definition: {
+            type: "object",
+            description: "Send this event to commit the user input audio buffer, which will create a new user message item in the conversation. This event will produce an error if the input audio buffer is empty. When in Server VAD mode, the client does not need to send this event, the server will commit the audio buffer automatically.\nCommitting the input audio buffer will trigger input audio transcription (if enabled in session configuration), but it will not create a response from the model. The server will respond with an `input_audio_buffer.committed` event.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "input_audio_buffer.commit".'
+                }
+            },
+            required: ["type"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.commit",
+                group: "realtime",
+                example: '{\n    "event_id": "event_789",\n    "type": "input_audio_buffer.commit"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".clear",
+        title: "input_audio_buffer.clear",
+        content: "Send this event to clear the audio bytes in the buffer. The server will respond with an `input_audio_buffer.cleared` event.",
+        url: "/docs/api-reference/realtime-client-events/input_audio_buffer/clear",
+        relativeUrl: "realtime-client-events/input_audio_buffer/clear",
+        definition: {
+            type: "object",
+            description: "Send this event to clear the audio bytes in the buffer. The server will respond with an `input_audio_buffer.cleared` event.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "input_audio_buffer.clear".'
+                }
+            },
+            required: ["type"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.clear",
+                group: "realtime",
+                example: '{\n    "event_id": "event_012",\n    "type": "input_audio_buffer.clear"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "objectgroup",
+        title: "conversation",
+        url: "/docs/api-reference/realtime-client-events/conversation",
+        relativeUrl: "realtime-client-events/conversation",
+        indent: 0
+    }, {
+        type: "objectgroup",
+        title: ".item",
+        url: "/docs/api-reference/realtime-client-events/conversation/item",
+        relativeUrl: "realtime-client-events/conversation/item",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".create",
+        title: "conversation.item.create",
+        content: 'Add a new Item to the Conversation\'s context, including messages, function calls, and function call responses. This event can be used both to populate a "history" of the conversation and to add new items mid-stream, but has the current limitation that it cannot populate assistant audio messages.\nIf successful, the server will respond with a `conversation.item.created` event, otherwise an `error` event will be sent.',
+        url: "/docs/api-reference/realtime-client-events/conversation/item/create",
+        relativeUrl: "realtime-client-events/conversation/item/create",
+        definition: {
+            type: "object",
+            description: 'Add a new Item to the Conversation\'s context, including messages, function calls, and function call responses. This event can be used both to populate a "history" of the conversation and to add new items mid-stream, but has the current limitation that it cannot populate assistant audio messages.\nIf successful, the server will respond with a `conversation.item.created` event, otherwise an `error` event will be sent.',
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.create`."
+                },
+                previous_item_id: {
+                    type: "string",
+                    description: "The ID of the preceding item after which the new item will be inserted. If not set, the new item will be appended to the end of the conversation. If set, it allows an item to be inserted mid-conversation. If the ID cannot be found, an error will be returned and the item will not be added."
+                },
+                item: {
+                    type: "object",
+                    description: "The item to add to the conversation.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the item, this can be generated by the client to help manage server-side context, but is not required because the server will generate one if not provided."
+                        },
+                        type: {
+                            type: "string",
+                            description: "The type of the item (`message`, `function_call`, `function_call_output`)."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The status of the item (`completed`, `incomplete`). These have no effect on the conversation, but are accepted for consistency with the `conversation.item.created` event."
+                        },
+                        role: {
+                            type: "string",
+                            description: "The role of the message sender (`user`, `assistant`, `system`), only applicable for `message` items."
+                        },
+                        content: {
+                            type: "array",
+                            description: "The content of the message, applicable for `message` items. Message items with a role of `system` support only `input_text` content, message items of role `user` support `input_text` and `input_audio` content, and message items of role `assistant` support `text` content.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The content type (`input_text`, `input_audio`, `text`)."
+                                    },
+                                    text: {
+                                        type: "string",
+                                        description: "The text content, used for `input_text` and `text` content types."
+                                    },
+                                    audio: {
+                                        type: "string",
+                                        description: "Base64-encoded audio bytes, used for `input_audio` content type."
+                                    },
+                                    transcript: {
+                                        type: "string",
+                                        description: "The transcript of the audio, used for `input_audio` content type."
+                                    }
+                                }
+                            }
+                        },
+                        call_id: {
+                            type: "string",
+                            description: "The ID of the function call (for `function_call` and `function_call_output` items). If passed on a `function_call_output` item, the server will check that a `function_call` item with the same ID exists in the conversation history."
+                        },
+                        name: {
+                            type: "string",
+                            description: "The name of the function being called (for `function_call` items)."
+                        },
+                        arguments: {
+                            type: "string",
+                            description: "The arguments of the function call (for `function_call` items)."
+                        },
+                        output: {
+                            type: "string",
+                            description: "The output of the function call (for `function_call_output` items)."
+                        }
+                    }
+                }
+            },
+            required: ["type", "item"],
+            "x-oaiMeta": {
+                name: "conversation.item.create",
+                group: "realtime",
+                example: '{\n    "event_id": "event_345",\n    "type": "conversation.item.create",\n    "previous_item_id": null,\n    "item": {\n        "id": "msg_001",\n        "type": "message",\n        "role": "user",\n        "content": [\n            {\n                "type": "input_text",\n                "text": "Hello, how are you?"\n            }\n        ]\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".truncate",
+        title: "conversation.item.truncate",
+        content: "Send this event to truncate a previous assistant message’s audio. The server will produce audio faster than realtime, so this event is useful when the user interrupts to truncate audio that has already been sent to the client but not yet played. This will synchronize the server's understanding of the audio with the client's playback.\nTruncating audio will delete the server-side text transcript to ensure there is not text in the context that hasn't been heard by the user.\nIf successful, the server will respond with a `conversation.item.truncated` event. ",
+        url: "/docs/api-reference/realtime-client-events/conversation/item/truncate",
+        relativeUrl: "realtime-client-events/conversation/item/truncate",
+        definition: {
+            type: "object",
+            description: "Send this event to truncate a previous assistant message’s audio. The server will produce audio faster than realtime, so this event is useful when the user interrupts to truncate audio that has already been sent to the client but not yet played. This will synchronize the server's understanding of the audio with the client's playback.\nTruncating audio will delete the server-side text transcript to ensure there is not text in the context that hasn't been heard by the user.\nIf successful, the server will respond with a `conversation.item.truncated` event. ",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "conversation.item.truncate".'
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the assistant message item to truncate. Only assistant message items can be truncated."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part to truncate. Set this to 0."
+                },
+                audio_end_ms: {
+                    type: "integer",
+                    description: "Inclusive duration up to which audio is truncated, in milliseconds. If the audio_end_ms is greater than the actual audio duration, the server will respond with an error."
+                }
+            },
+            required: ["type", "item_id", "content_index", "audio_end_ms"],
+            "x-oaiMeta": {
+                name: "conversation.item.truncate",
+                group: "realtime",
+                example: '{\n    "event_id": "event_678",\n    "type": "conversation.item.truncate",\n    "item_id": "msg_002",\n    "content_index": 0,\n    "audio_end_ms": 1500\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".delete",
+        title: "conversation.item.delete",
+        content: "Send this event when you want to remove any item from the conversation history. The server will respond with a `conversation.item.deleted` event, unless the item does not exist in the conversation history, in which case the server will respond with an error.",
+        url: "/docs/api-reference/realtime-client-events/conversation/item/delete",
+        relativeUrl: "realtime-client-events/conversation/item/delete",
+        definition: {
+            type: "object",
+            description: "Send this event when you want to remove any item from the conversation history. The server will respond with a `conversation.item.deleted` event, unless the item does not exist in the conversation history, in which case the server will respond with an error.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "conversation.item.delete".'
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item to delete."
+                }
+            },
+            required: ["type", "item_id"],
+            "x-oaiMeta": {
+                name: "conversation.item.delete",
+                group: "realtime",
+                example: '{\n    "event_id": "event_901",\n    "type": "conversation.item.delete",\n    "item_id": "msg_003"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: "response",
+        url: "/docs/api-reference/realtime-client-events/response",
+        relativeUrl: "realtime-client-events/response",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".create",
+        title: "response.create",
+        content: "This event instructs the server to create a Response, which means triggering model inference. When in Server VAD mode, the server will create Responses automatically.\nA Response will include at least one Item, and may have two, in which case the second will be a function call. These Items will be appended to the conversation history.\nThe server will respond with a `response.created` event, events for Items and content created, and finally a `response.done` event to indicate the Response is complete.\nThe `response.create` event includes inference configuration like `instructions`, and `temperature`. These fields will override the Session's configuration for this Response only.",
+        url: "/docs/api-reference/realtime-client-events/response/create",
+        relativeUrl: "realtime-client-events/response/create",
+        definition: {
+            type: "object",
+            description: "This event instructs the server to create a Response, which means triggering model inference. When in Server VAD mode, the server will create Responses automatically.\nA Response will include at least one Item, and may have two, in which case the second will be a function call. These Items will be appended to the conversation history.\nThe server will respond with a `response.created` event, events for Items and content created, and finally a `response.done` event to indicate the Response is complete.\nThe `response.create` event includes inference configuration like `instructions`, and `temperature`. These fields will override the Session's configuration for this Response only.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `response.create`."
+                },
+                response: {
+                    type: "object",
+                    description: "The response resource.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the response."
+                        },
+                        object: {
+                            type: "string",
+                            description: "The object type, must be `realtime.response`."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The final status of the response (`completed`, `cancelled`, `failed`, `incomplete`)."
+                        },
+                        status_details: {
+                            type: "object",
+                            description: "Additional details about the status.",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    description: "The type of error that caused the response to fail, corresponding with the `status` field (`cancelled`, `incomplete`, `failed`)."
+                                },
+                                reason: {
+                                    type: "string",
+                                    description: "The reason the Response did not complete. For a `cancelled` Response, one of `turn_detected` (the server VAD detected a new start of speech) or `client_cancelled` (the client sent a cancel event). For an `incomplete` Response, one of `max_output_tokens` or `content_filter` (the server-side safety filter activated and cut off the response)."
+                                },
+                                error: {
+                                    type: "object",
+                                    description: "A description of the error that caused the response to fail, populated when the `status` is `failed`.",
+                                    properties: {
+                                        type: {
+                                            type: "string",
+                                            description: "The type of error."
+                                        },
+                                        code: {
+                                            type: "string",
+                                            description: "Error code, if any."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        output: {
+                            type: "array",
+                            description: "The list of output items generated by the response.",
+                            items: {
+                                type: "object",
+                                description: "An item in the response output."
+                            }
+                        },
+                        usage: {
+                            type: "object",
+                            description: "Usage statistics for the Response, this will correspond to billing. A Realtime API session will maintain a conversation context and append new Items to the Conversation, thus output from previous turns (text and audio tokens) will become the input for later turns.",
+                            properties: {
+                                total_tokens: {
+                                    type: "integer",
+                                    description: "The total number of tokens in the Response including input and output text and audio tokens."
+                                },
+                                input_tokens: {
+                                    type: "integer",
+                                    description: "The number of input tokens used in the Response, including text and audio tokens."
+                                },
+                                output_tokens: {
+                                    type: "integer",
+                                    description: "The number of output tokens sent in the Response, including text and audio tokens."
+                                },
+                                input_token_details: {
+                                    type: "object",
+                                    description: "Details about the input tokens used in the Response.",
+                                    properties: {
+                                        cached_tokens: {
+                                            type: "integer",
+                                            description: "The number of cached tokens used in the Response."
+                                        },
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                },
+                                output_token_details: {
+                                    type: "object",
+                                    description: "Details about the output tokens used in the Response.",
+                                    properties: {
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            required: ["type", "response"],
+            "x-oaiMeta": {
+                name: "response.create",
+                group: "realtime",
+                example: '{\n    "event_id": "event_234",\n    "type": "response.create",\n    "response": {\n        "modalities": ["text", "audio"],\n        "instructions": "Please assist the user.",\n        "voice": "alloy",\n        "output_audio_format": "pcm16",\n        "tools": [\n            {\n                "type": "function",\n                "name": "calculate_sum",\n                "description": "Calculates the sum of two numbers.",\n                "parameters": {\n                    "type": "object",\n                    "properties": {\n                        "a": { "type": "number" },\n                        "b": { "type": "number" }\n                    },\n                    "required": ["a", "b"]\n                }\n            }\n        ],\n        "tool_choice": "auto",\n        "temperature": 0.7,\n        "max_output_tokens": 150\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".cancel",
+        title: "response.cancel",
+        content: "Send this event to cancel an in-progress response. The server will respond with a `response.cancelled` event or an error if there is no response to cancel.",
+        url: "/docs/api-reference/realtime-client-events/response/cancel",
+        relativeUrl: "realtime-client-events/response/cancel",
+        definition: {
+            type: "object",
+            description: "Send this event to cancel an in-progress response. The server will respond with a `response.cancelled` event or an error if there is no response to cancel.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "Optional client-generated ID used to identify this event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `response.cancel`."
+                }
+            },
+            required: ["type"],
+            "x-oaiMeta": {
+                name: "response.cancel",
+                group: "realtime",
+                example: '{\n    "event_id": "event_567",\n    "type": "response.cancel"\n}\n'
+            }
+        },
+        indent: 1
+    }]
+}, {
+    id: "realtime-server-events",
+    type: "generated",
+    title: "Server events",
+    content: "These are events emitted from the OpenAI Realtime WebSocket server to the client.\n",
+    navigationGroup: "realtime",
+    url: "/docs/api-reference/realtime-server-events",
+    sections: [{
+        type: "object",
+        navTitle: "error",
+        title: "error",
+        content: "Returned when an error occurs, which could be a client problem or a server problem. Most errors are recoverable and the session will stay open, we recommend to implementors to monitor and log error messages by default.",
+        url: "/docs/api-reference/realtime-server-events/error",
+        relativeUrl: "realtime-server-events/error",
+        definition: {
+            type: "object",
+            description: "Returned when an error occurs, which could be a client problem or a server problem. Most errors are recoverable and the session will stay open, we recommend to implementors to monitor and log error messages by default.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "error".'
+                },
+                error: {
+                    type: "object",
+                    description: "Details of the error.",
+                    properties: {
+                        type: {
+                            type: "string",
+                            description: 'The type of error (e.g., "invalid_request_error", "server_error").'
+                        },
+                        code: {
+                            type: "string",
+                            description: "Error code, if any."
+                        },
+                        message: {
+                            type: "string",
+                            description: "A human-readable error message."
+                        },
+                        param: {
+                            type: "string",
+                            description: "Parameter related to the error, if any."
+                        },
+                        event_id: {
+                            type: "string",
+                            description: "The event_id of the client event that caused the error, if applicable."
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "error"],
+            "x-oaiMeta": {
+                name: "error",
+                group: "realtime",
+                example: '{\n    "event_id": "event_890",\n    "type": "error",\n    "error": {\n        "type": "invalid_request_error",\n        "code": "invalid_event",\n        "message": "The \'type\' field is missing.",\n        "param": null,\n        "event_id": "event_567"\n    }\n}\n'
+            }
+        },
+        indent: 0
+    }, {
+        type: "objectgroup",
+        title: "session",
+        url: "/docs/api-reference/realtime-server-events/session",
+        relativeUrl: "realtime-server-events/session",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".created",
+        title: "session.created",
+        content: "Returned when a Session is created. Emitted automatically when a new connection is established as the first server event. This event will contain the default Session configuration.",
+        url: "/docs/api-reference/realtime-server-events/session/created",
+        relativeUrl: "realtime-server-events/session/created",
+        definition: {
+            type: "object",
+            description: "Returned when a Session is created. Emitted automatically when a new connection is established as the first server event. This event will contain the default Session configuration.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `session.created`."
+                },
+                session: {
+                    type: "object",
+                    description: "Realtime session object configuration.",
+                    properties: {
+                        modalities: {
+                            type: "array",
+                            items: {
+                                type: "string"
+                            },
+                            description: 'The set of modalities the model can respond with. To disable audio,\nset this to ["text"].\n'
+                        },
+                        instructions: {
+                            type: "string",
+                            description: 'The default system instructions (i.e. system message) prepended to model \ncalls. This field allows the client to guide the model on desired \nresponses. The model can be instructed on response content and format, \n(e.g. "be extremely succinct", "act friendly", "here are examples of good \nresponses") and on audio behavior (e.g. "talk quickly", "inject emotion \ninto your voice", "laugh frequently"). The instructions are not guaranteed \nto be followed by the model, but they provide guidance to the model on the \ndesired behavior.\n\nNote that the server sets default instructions which will be used if this \nfield is not set and are visible in the `session.created` event at the \nstart of the session.\n'
+                        },
+                        voice: {
+                            type: "string",
+                            enum: ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"],
+                            description: "The voice the model uses to respond. Supported voices are `alloy`, `ash`,\n`ballad`, `coral`, `echo`, `sage`, `shimmer`, and `verse`. Cannot be \nchanged once the model has responded with audio at least once.\n"
+                        },
+                        input_audio_format: {
+                            type: "string",
+                            description: "The format of input audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        output_audio_format: {
+                            type: "string",
+                            description: "The format of output audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        input_audio_transcription: {
+                            type: "object",
+                            description: "Configuration for input audio transcription, defaults to off and can be \nset to `null` to turn off once on. Input audio transcription is not native \nto the model, since the model consumes audio directly. Transcription runs \nasynchronously through Whisper and should be treated as rough guidance \nrather than the representation understood by the model.\n",
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    description: "The model to use for transcription, `whisper-1` is the only currently \nsupported model.\n"
+                                }
+                            }
+                        },
+                        turn_detection: {
+                            type: "object",
+                            description: "Configuration for turn detection. Can be set to `null` to turn off. Server \nVAD means that the model will detect the start and end of speech based on \naudio volume and respond at the end of user speech.\n",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    description: "Type of turn detection, only `server_vad` is currently supported.\n"
+                                },
+                                threshold: {
+                                    type: "number",
+                                    description: "Activation threshold for VAD (0.0 to 1.0), this defaults to 0.5. A \nhigher threshold will require louder audio to activate the model, and \nthus might perform better in noisy environments.\n"
+                                },
+                                prefix_padding_ms: {
+                                    type: "integer",
+                                    description: "Amount of audio to include before the VAD detected speech (in \nmilliseconds). Defaults to 300ms.\n"
+                                },
+                                silence_duration_ms: {
+                                    type: "integer",
+                                    description: "Duration of silence to detect speech stop (in milliseconds). Defaults \nto 500ms. With shorter values the model will respond more quickly, \nbut may jump in on short pauses from the user.\n"
+                                }
+                            }
+                        },
+                        tools: {
+                            type: "array",
+                            description: "Tools (functions) available to the model.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The type of the tool, i.e. `function`."
+                                    },
+                                    name: {
+                                        type: "string",
+                                        description: "The name of the function."
+                                    },
+                                    description: {
+                                        type: "string",
+                                        description: "The description of the function, including guidance on when and how \nto call it, and guidance about what to tell the user when calling \n(if anything).\n"
+                                    },
+                                    parameters: {
+                                        type: "object",
+                                        description: "Parameters of the function in JSON Schema."
+                                    }
+                                }
+                            }
+                        },
+                        tool_choice: {
+                            type: "string",
+                            description: "How the model chooses tools. Options are `auto`, `none`, `required`, or \nspecify a function.\n"
+                        },
+                        temperature: {
+                            type: "number",
+                            description: "Sampling temperature for the model, limited to [0.6, 1.2]. Defaults to 0.8.\n"
+                        },
+                        max_response_output_tokens: {
+                            oneOf: [{
+                                type: "integer"
+                            }, {
+                                type: "string",
+                                enum: ["inf"]
+                            }],
+                            description: "Maximum number of output tokens for a single assistant response,\ninclusive of tool calls. Provide an integer between 1 and 4096 to\nlimit output tokens, or `inf` for the maximum available tokens for a\ngiven model. Defaults to `inf`.\n"
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "session"],
+            "x-oaiMeta": {
+                name: "session.created",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1234",\n    "type": "session.created",\n    "session": {\n        "id": "sess_001",\n        "object": "realtime.session",\n        "model": "gpt-4o-realtime-preview-2024-10-01",\n        "modalities": ["text", "audio"],\n        "instructions": "",\n        "voice": "alloy",\n        "input_audio_format": "pcm16",\n        "output_audio_format": "pcm16",\n        "input_audio_transcription": null,\n        "turn_detection": {\n            "type": "server_vad",\n            "threshold": 0.5,\n            "prefix_padding_ms": 300,\n            "silence_duration_ms": 200\n        },\n        "tools": [],\n        "tool_choice": "auto",\n        "temperature": 0.8,\n        "max_response_output_tokens": null\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".updated",
+        title: "session.updated",
+        content: "Returned when a session is updated with a `session.update` event, unless there is an error.",
+        url: "/docs/api-reference/realtime-server-events/session/updated",
+        relativeUrl: "realtime-server-events/session/updated",
+        definition: {
+            type: "object",
+            description: "Returned when a session is updated with a `session.update` event, unless there is an error.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "session.updated".'
+                },
+                session: {
+                    type: "object",
+                    description: "Realtime session object configuration.",
+                    properties: {
+                        modalities: {
+                            type: "array",
+                            items: {
+                                type: "string"
+                            },
+                            description: 'The set of modalities the model can respond with. To disable audio,\nset this to ["text"].\n'
+                        },
+                        instructions: {
+                            type: "string",
+                            description: 'The default system instructions (i.e. system message) prepended to model \ncalls. This field allows the client to guide the model on desired \nresponses. The model can be instructed on response content and format, \n(e.g. "be extremely succinct", "act friendly", "here are examples of good \nresponses") and on audio behavior (e.g. "talk quickly", "inject emotion \ninto your voice", "laugh frequently"). The instructions are not guaranteed \nto be followed by the model, but they provide guidance to the model on the \ndesired behavior.\n\nNote that the server sets default instructions which will be used if this \nfield is not set and are visible in the `session.created` event at the \nstart of the session.\n'
+                        },
+                        voice: {
+                            type: "string",
+                            enum: ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"],
+                            description: "The voice the model uses to respond. Supported voices are `alloy`, `ash`,\n`ballad`, `coral`, `echo`, `sage`, `shimmer`, and `verse`. Cannot be \nchanged once the model has responded with audio at least once.\n"
+                        },
+                        input_audio_format: {
+                            type: "string",
+                            description: "The format of input audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        output_audio_format: {
+                            type: "string",
+                            description: "The format of output audio. Options are `pcm16`, `g711_ulaw`, or `g711_alaw`.\n"
+                        },
+                        input_audio_transcription: {
+                            type: "object",
+                            description: "Configuration for input audio transcription, defaults to off and can be \nset to `null` to turn off once on. Input audio transcription is not native \nto the model, since the model consumes audio directly. Transcription runs \nasynchronously through Whisper and should be treated as rough guidance \nrather than the representation understood by the model.\n",
+                            properties: {
+                                model: {
+                                    type: "string",
+                                    description: "The model to use for transcription, `whisper-1` is the only currently \nsupported model.\n"
+                                }
+                            }
+                        },
+                        turn_detection: {
+                            type: "object",
+                            description: "Configuration for turn detection. Can be set to `null` to turn off. Server \nVAD means that the model will detect the start and end of speech based on \naudio volume and respond at the end of user speech.\n",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    description: "Type of turn detection, only `server_vad` is currently supported.\n"
+                                },
+                                threshold: {
+                                    type: "number",
+                                    description: "Activation threshold for VAD (0.0 to 1.0), this defaults to 0.5. A \nhigher threshold will require louder audio to activate the model, and \nthus might perform better in noisy environments.\n"
+                                },
+                                prefix_padding_ms: {
+                                    type: "integer",
+                                    description: "Amount of audio to include before the VAD detected speech (in \nmilliseconds). Defaults to 300ms.\n"
+                                },
+                                silence_duration_ms: {
+                                    type: "integer",
+                                    description: "Duration of silence to detect speech stop (in milliseconds). Defaults \nto 500ms. With shorter values the model will respond more quickly, \nbut may jump in on short pauses from the user.\n"
+                                }
+                            }
+                        },
+                        tools: {
+                            type: "array",
+                            description: "Tools (functions) available to the model.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The type of the tool, i.e. `function`."
+                                    },
+                                    name: {
+                                        type: "string",
+                                        description: "The name of the function."
+                                    },
+                                    description: {
+                                        type: "string",
+                                        description: "The description of the function, including guidance on when and how \nto call it, and guidance about what to tell the user when calling \n(if anything).\n"
+                                    },
+                                    parameters: {
+                                        type: "object",
+                                        description: "Parameters of the function in JSON Schema."
+                                    }
+                                }
+                            }
+                        },
+                        tool_choice: {
+                            type: "string",
+                            description: "How the model chooses tools. Options are `auto`, `none`, `required`, or \nspecify a function.\n"
+                        },
+                        temperature: {
+                            type: "number",
+                            description: "Sampling temperature for the model, limited to [0.6, 1.2]. Defaults to 0.8.\n"
+                        },
+                        max_response_output_tokens: {
+                            oneOf: [{
+                                type: "integer"
+                            }, {
+                                type: "string",
+                                enum: ["inf"]
+                            }],
+                            description: "Maximum number of output tokens for a single assistant response,\ninclusive of tool calls. Provide an integer between 1 and 4096 to\nlimit output tokens, or `inf` for the maximum available tokens for a\ngiven model. Defaults to `inf`.\n"
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "session"],
+            "x-oaiMeta": {
+                name: "session.updated",
+                group: "realtime",
+                example: '{\n    "event_id": "event_5678",\n    "type": "session.updated",\n    "session": {\n        "id": "sess_001",\n        "object": "realtime.session",\n        "model": "gpt-4o-realtime-preview-2024-10-01",\n        "modalities": ["text"],\n        "instructions": "New instructions",\n        "voice": "alloy",\n        "input_audio_format": "pcm16",\n        "output_audio_format": "pcm16",\n        "input_audio_transcription": {\n            "model": "whisper-1"\n        },\n        "turn_detection": null,\n        "tools": [],\n        "tool_choice": "none",\n        "temperature": 0.7,\n        "max_response_output_tokens": 200\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "objectgroup",
+        title: "conversation",
+        url: "/docs/api-reference/realtime-server-events/conversation",
+        relativeUrl: "realtime-server-events/conversation",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".created",
+        title: "conversation.created",
+        content: "Returned when a conversation is created. Emitted right after session creation.",
+        url: "/docs/api-reference/realtime-server-events/conversation/created",
+        relativeUrl: "realtime-server-events/conversation/created",
+        definition: {
+            type: "object",
+            description: "Returned when a conversation is created. Emitted right after session creation.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "conversation.created".'
+                },
+                conversation: {
+                    type: "object",
+                    description: "The conversation resource.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the conversation."
+                        },
+                        object: {
+                            type: "string",
+                            description: 'The object type, must be "realtime.conversation".'
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "conversation"],
+            "x-oaiMeta": {
+                name: "conversation.created",
+                group: "realtime",
+                example: '{\n    "event_id": "event_9101",\n    "type": "conversation.created",\n    "conversation": {\n        "id": "conv_001",\n        "object": "realtime.conversation"\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "objectgroup",
+        title: ".item",
+        url: "/docs/api-reference/realtime-server-events/conversation/item",
+        relativeUrl: "realtime-server-events/conversation/item",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".created",
+        title: "conversation.item.created",
+        content: "Returned when a conversation item is created. There are several scenarios that produce this event:\n  - The server is generating a Response, which if successful will produce either one or two Items, which will be of type `message` (role `assistant`) or type `function_call`.\n  - The input audio buffer has been committed, either by the client or the server (in `server_vad` mode). The server will take the content of the input audio buffer and add it to a new user message Item.\n  - The client has sent a `conversation.item.create` event to add a new Item to the Conversation.",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/created",
+        relativeUrl: "realtime-server-events/conversation/item/created",
+        definition: {
+            type: "object",
+            description: "Returned when a conversation item is created. There are several scenarios that produce this event:\n  - The server is generating a Response, which if successful will produce either one or two Items, which will be of type `message` (role `assistant`) or type `function_call`.\n  - The input audio buffer has been committed, either by the client or the server (in `server_vad` mode). The server will take the content of the input audio buffer and add it to a new user message Item.\n  - The client has sent a `conversation.item.create` event to add a new Item to the Conversation.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.created`."
+                },
+                previous_item_id: {
+                    type: "string",
+                    description: "The ID of the preceding item in the Conversation context, allows the client to understand the order of the conversation."
+                },
+                item: {
+                    type: "object",
+                    description: "The item to add to the conversation.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the item, this can be generated by the client to help manage server-side context, but is not required because the server will generate one if not provided."
+                        },
+                        type: {
+                            type: "string",
+                            description: "The type of the item (`message`, `function_call`, `function_call_output`)."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The status of the item (`completed`, `incomplete`). These have no effect on the conversation, but are accepted for consistency with the `conversation.item.created` event."
+                        },
+                        role: {
+                            type: "string",
+                            description: "The role of the message sender (`user`, `assistant`, `system`), only applicable for `message` items."
+                        },
+                        content: {
+                            type: "array",
+                            description: "The content of the message, applicable for `message` items. Message items with a role of `system` support only `input_text` content, message items of role `user` support `input_text` and `input_audio` content, and message items of role `assistant` support `text` content.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The content type (`input_text`, `input_audio`, `text`)."
+                                    },
+                                    text: {
+                                        type: "string",
+                                        description: "The text content, used for `input_text` and `text` content types."
+                                    },
+                                    audio: {
+                                        type: "string",
+                                        description: "Base64-encoded audio bytes, used for `input_audio` content type."
+                                    },
+                                    transcript: {
+                                        type: "string",
+                                        description: "The transcript of the audio, used for `input_audio` content type."
+                                    }
+                                }
+                            }
+                        },
+                        call_id: {
+                            type: "string",
+                            description: "The ID of the function call (for `function_call` and `function_call_output` items). If passed on a `function_call_output` item, the server will check that a `function_call` item with the same ID exists in the conversation history."
+                        },
+                        name: {
+                            type: "string",
+                            description: "The name of the function being called (for `function_call` items)."
+                        },
+                        arguments: {
+                            type: "string",
+                            description: "The arguments of the function call (for `function_call` items)."
+                        },
+                        output: {
+                            type: "string",
+                            description: "The output of the function call (for `function_call_output` items)."
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "previous_item_id", "item"],
+            "x-oaiMeta": {
+                name: "conversation.item.created",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1920",\n    "type": "conversation.item.created",\n    "previous_item_id": "msg_002",\n    "item": {\n        "id": "msg_003",\n        "object": "realtime.item",\n        "type": "message",\n        "status": "completed",\n        "role": "user",\n        "content": [\n            {\n                "type": "input_audio",\n                "transcript": "hello how are you",\n                "audio": "base64encodedaudio=="\n            }\n        ]\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".input_audio_transcription",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/input_audio_transcription",
+        relativeUrl: "realtime-server-events/conversation/item/input_audio_transcription",
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".completed",
+        title: "conversation.item.input_audio_transcription.completed",
+        content: "This event is the output of audio transcription for user audio written to the user audio buffer. Transcription begins when the input audio buffer is committed by the client or server (in `server_vad` mode). Transcription runs asynchronously with Response creation, so this event may come before or after the Response events.\nRealtime API models accept audio natively, and thus input transcription is a separate process run on a separate ASR (Automatic Speech Recognition) model, currently always `whisper-1`. Thus the transcript may diverge somewhat from the model's interpretation, and should be treated as a rough guide.",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/input_audio_transcription/completed",
+        relativeUrl: "realtime-server-events/conversation/item/input_audio_transcription/completed",
+        definition: {
+            type: "object",
+            description: "This event is the output of audio transcription for user audio written to the user audio buffer. Transcription begins when the input audio buffer is committed by the client or server (in `server_vad` mode). Transcription runs asynchronously with Response creation, so this event may come before or after the Response events.\nRealtime API models accept audio natively, and thus input transcription is a separate process run on a separate ASR (Automatic Speech Recognition) model, currently always `whisper-1`. Thus the transcript may diverge somewhat from the model's interpretation, and should be treated as a rough guide.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.input_audio_transcription.completed`."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the user message item containing the audio."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part containing the audio."
+                },
+                transcript: {
+                    type: "string",
+                    description: "The transcribed text."
+                }
+            },
+            required: ["event_id", "type", "item_id", "content_index", "transcript"],
+            "x-oaiMeta": {
+                name: "conversation.item.input_audio_transcription.completed",
+                group: "realtime",
+                example: '{\n    "event_id": "event_2122",\n    "type": "conversation.item.input_audio_transcription.completed",\n    "item_id": "msg_003",\n    "content_index": 0,\n    "transcript": "Hello, how are you?"\n}\n'
+            }
+        },
+        indent: 3
+    }, {
+        type: "object",
+        navTitle: ".failed",
+        title: "conversation.item.input_audio_transcription.failed",
+        content: "Returned when input audio transcription is configured, and a transcription request for a user message failed. These events are separate from other `error` events so that the client can identify the related Item.",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/input_audio_transcription/failed",
+        relativeUrl: "realtime-server-events/conversation/item/input_audio_transcription/failed",
+        definition: {
+            type: "object",
+            description: "Returned when input audio transcription is configured, and a transcription request for a user message failed. These events are separate from other `error` events so that the client can identify the related Item.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.input_audio_transcription.failed`."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the user message item."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part containing the audio."
+                },
+                error: {
+                    type: "object",
+                    description: "Details of the transcription error.",
+                    properties: {
+                        type: {
+                            type: "string",
+                            description: "The type of error."
+                        },
+                        code: {
+                            type: "string",
+                            description: "Error code, if any."
+                        },
+                        message: {
+                            type: "string",
+                            description: "A human-readable error message."
+                        },
+                        param: {
+                            type: "string",
+                            description: "Parameter related to the error, if any."
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "item_id", "content_index", "error"],
+            "x-oaiMeta": {
+                name: "conversation.item.input_audio_transcription.failed",
+                group: "realtime",
+                example: '{\n    "event_id": "event_2324",\n    "type": "conversation.item.input_audio_transcription.failed",\n    "item_id": "msg_003",\n    "content_index": 0,\n    "error": {\n        "type": "transcription_error",\n        "code": "audio_unintelligible",\n        "message": "The audio could not be transcribed.",\n        "param": null\n    }\n}\n'
+            }
+        },
+        indent: 3
+    }, {
+        type: "object",
+        navTitle: ".truncated",
+        title: "conversation.item.truncated",
+        content: "Returned when an earlier assistant audio message item is truncated by the client with a `conversation.item.truncate` event. This event is used to synchronize the server's understanding of the audio with the client's playback.\nThis action will truncate the audio and remove the server-side text transcript to ensure there is no text in the context that hasn't been heard by the user.",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/truncated",
+        relativeUrl: "realtime-server-events/conversation/item/truncated",
+        definition: {
+            type: "object",
+            description: "Returned when an earlier assistant audio message item is truncated by the client with a `conversation.item.truncate` event. This event is used to synchronize the server's understanding of the audio with the client's playback.\nThis action will truncate the audio and remove the server-side text transcript to ensure there is no text in the context that hasn't been heard by the user.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.truncated`."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the assistant message item that was truncated."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part that was truncated."
+                },
+                audio_end_ms: {
+                    type: "integer",
+                    description: "The duration up to which the audio was truncated, in milliseconds."
+                }
+            },
+            required: ["event_id", "type", "item_id", "content_index", "audio_end_ms"],
+            "x-oaiMeta": {
+                name: "conversation.item.truncated",
+                group: "realtime",
+                example: '{\n    "event_id": "event_2526",\n    "type": "conversation.item.truncated",\n    "item_id": "msg_004",\n    "content_index": 0,\n    "audio_end_ms": 1500\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".deleted",
+        title: "conversation.item.deleted",
+        content: "Returned when an item in the conversation is deleted by the client with a `conversation.item.delete` event. This event is used to synchronize the server's understanding of the conversation history with the client's view.",
+        url: "/docs/api-reference/realtime-server-events/conversation/item/deleted",
+        relativeUrl: "realtime-server-events/conversation/item/deleted",
+        definition: {
+            type: "object",
+            description: "Returned when an item in the conversation is deleted by the client with a `conversation.item.delete` event. This event is used to synchronize the server's understanding of the conversation history with the client's view.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `conversation.item.deleted`."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item that was deleted."
+                }
+            },
+            required: ["event_id", "type", "item_id"],
+            "x-oaiMeta": {
+                name: "conversation.item.deleted",
+                group: "realtime",
+                example: '{\n    "event_id": "event_2728",\n    "type": "conversation.item.deleted",\n    "item_id": "msg_005"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: "input_audio_buffer",
+        url: "/docs/api-reference/realtime-server-events/input_audio_buffer",
+        relativeUrl: "realtime-server-events/input_audio_buffer",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".committed",
+        title: "input_audio_buffer.committed",
+        content: "Returned when an input audio buffer is committed, either by the client or automatically in server VAD mode. The `item_id` property is the ID of the user message item that will be created, thus a `conversation.item.created` event will also be sent to the client.",
+        url: "/docs/api-reference/realtime-server-events/input_audio_buffer/committed",
+        relativeUrl: "realtime-server-events/input_audio_buffer/committed",
+        definition: {
+            type: "object",
+            description: "Returned when an input audio buffer is committed, either by the client or automatically in server VAD mode. The `item_id` property is the ID of the user message item that will be created, thus a `conversation.item.created` event will also be sent to the client.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `input_audio_buffer.committed`."
+                },
+                previous_item_id: {
+                    type: "string",
+                    description: "The ID of the preceding item after which the new item will be inserted."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the user message item that will be created."
+                }
+            },
+            required: ["event_id", "type", "previous_item_id", "item_id"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.committed",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1121",\n    "type": "input_audio_buffer.committed",\n    "previous_item_id": "msg_001",\n    "item_id": "msg_002"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".cleared",
+        title: "input_audio_buffer.cleared",
+        content: "Returned when the input audio buffer is cleared by the client with a `input_audio_buffer.clear` event.",
+        url: "/docs/api-reference/realtime-server-events/input_audio_buffer/cleared",
+        relativeUrl: "realtime-server-events/input_audio_buffer/cleared",
+        definition: {
+            type: "object",
+            description: "Returned when the input audio buffer is cleared by the client with a `input_audio_buffer.clear` event.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `input_audio_buffer.cleared`."
+                }
+            },
+            required: ["event_id", "type"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.cleared",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1314",\n    "type": "input_audio_buffer.cleared"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".speech_started",
+        title: "input_audio_buffer.speech_started",
+        content: "Sent by the server when in `server_vad` mode to indicate that speech has been detected in the audio buffer. This can happen any time audio is added to the buffer (unless speech is already detected). The client may want to use this event to interrupt audio playback or provide visual feedback to the user. The client should expect to receive a `input_audio_buffer.speech_stopped` event when speech stops. The `item_id` property is the ID of the user message item that will be created when speech stops and will also be included in the `input_audio_buffer.speech_stopped` event (unless the client manually commits the audio buffer during VAD activation).",
+        url: "/docs/api-reference/realtime-server-events/input_audio_buffer/speech_started",
+        relativeUrl: "realtime-server-events/input_audio_buffer/speech_started",
+        definition: {
+            type: "object",
+            description: "Sent by the server when in `server_vad` mode to indicate that speech has been detected in the audio buffer. This can happen any time audio is added to the buffer (unless speech is already detected). The client may want to use this event to interrupt audio playback or provide visual feedback to the user. The client should expect to receive a `input_audio_buffer.speech_stopped` event when speech stops. The `item_id` property is the ID of the user message item that will be created when speech stops and will also be included in the `input_audio_buffer.speech_stopped` event (unless the client manually commits the audio buffer during VAD activation).",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `input_audio_buffer.speech_started`."
+                },
+                audio_start_ms: {
+                    type: "integer",
+                    description: "Milliseconds from the start of all audio written to the buffer during the session when speech was first detected. This will correspond to the beginning of audio sent to the model, and thus includes the `prefix_padding_ms` configured in the Session."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the user message item that will be created when speech stops."
+                }
+            },
+            required: ["event_id", "type", "audio_start_ms", "item_id"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.speech_started",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1516",\n    "type": "input_audio_buffer.speech_started",\n    "audio_start_ms": 1000,\n    "item_id": "msg_003"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".speech_stopped",
+        title: "input_audio_buffer.speech_stopped",
+        content: "Returned in `server_vad` mode when the server detects the end of speech in the audio buffer. The server will also send an `conversation.item.created` event with the user message item that is created from the audio buffer.",
+        url: "/docs/api-reference/realtime-server-events/input_audio_buffer/speech_stopped",
+        relativeUrl: "realtime-server-events/input_audio_buffer/speech_stopped",
+        definition: {
+            type: "object",
+            description: "Returned in `server_vad` mode when the server detects the end of speech in the audio buffer. The server will also send an `conversation.item.created` event with the user message item that is created from the audio buffer.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `input_audio_buffer.speech_stopped`."
+                },
+                audio_end_ms: {
+                    type: "integer",
+                    description: "Milliseconds since the session started when speech stopped. This will correspond to the end of audio sent to the model, and thus includes the `min_silence_duration_ms` configured in the Session."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the user message item that will be created."
+                }
+            },
+            required: ["event_id", "type", "audio_end_ms", "item_id"],
+            "x-oaiMeta": {
+                name: "input_audio_buffer.speech_stopped",
+                group: "realtime",
+                example: '{\n    "event_id": "event_1718",\n    "type": "input_audio_buffer.speech_stopped",\n    "audio_end_ms": 2000,\n    "item_id": "msg_003"\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "objectgroup",
+        title: "response",
+        url: "/docs/api-reference/realtime-server-events/response",
+        relativeUrl: "realtime-server-events/response",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".created",
+        title: "response.created",
+        content: "Returned when a new Response is created. The first event of response creation, where the response is in an initial state of `in_progress`.",
+        url: "/docs/api-reference/realtime-server-events/response/created",
+        relativeUrl: "realtime-server-events/response/created",
+        definition: {
+            type: "object",
+            description: "Returned when a new Response is created. The first event of response creation, where the response is in an initial state of `in_progress`.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `response.created`."
+                },
+                response: {
+                    type: "object",
+                    description: "The response resource.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the response."
+                        },
+                        object: {
+                            type: "string",
+                            description: "The object type, must be `realtime.response`."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The final status of the response (`completed`, `cancelled`, `failed`, `incomplete`)."
+                        },
+                        status_details: {
+                            type: "object",
+                            description: "Additional details about the status.",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    description: "The type of error that caused the response to fail, corresponding with the `status` field (`cancelled`, `incomplete`, `failed`)."
+                                },
+                                reason: {
+                                    type: "string",
+                                    description: "The reason the Response did not complete. For a `cancelled` Response, one of `turn_detected` (the server VAD detected a new start of speech) or `client_cancelled` (the client sent a cancel event). For an `incomplete` Response, one of `max_output_tokens` or `content_filter` (the server-side safety filter activated and cut off the response)."
+                                },
+                                error: {
+                                    type: "object",
+                                    description: "A description of the error that caused the response to fail, populated when the `status` is `failed`.",
+                                    properties: {
+                                        type: {
+                                            type: "string",
+                                            description: "The type of error."
+                                        },
+                                        code: {
+                                            type: "string",
+                                            description: "Error code, if any."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        output: {
+                            type: "array",
+                            description: "The list of output items generated by the response.",
+                            items: {
+                                type: "object",
+                                description: "An item in the response output."
+                            }
+                        },
+                        usage: {
+                            type: "object",
+                            description: "Usage statistics for the Response, this will correspond to billing. A Realtime API session will maintain a conversation context and append new Items to the Conversation, thus output from previous turns (text and audio tokens) will become the input for later turns.",
+                            properties: {
+                                total_tokens: {
+                                    type: "integer",
+                                    description: "The total number of tokens in the Response including input and output text and audio tokens."
+                                },
+                                input_tokens: {
+                                    type: "integer",
+                                    description: "The number of input tokens used in the Response, including text and audio tokens."
+                                },
+                                output_tokens: {
+                                    type: "integer",
+                                    description: "The number of output tokens sent in the Response, including text and audio tokens."
+                                },
+                                input_token_details: {
+                                    type: "object",
+                                    description: "Details about the input tokens used in the Response.",
+                                    properties: {
+                                        cached_tokens: {
+                                            type: "integer",
+                                            description: "The number of cached tokens used in the Response."
+                                        },
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                },
+                                output_token_details: {
+                                    type: "object",
+                                    description: "Details about the output tokens used in the Response.",
+                                    properties: {
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response"],
+            "x-oaiMeta": {
+                name: "response.created",
+                group: "realtime",
+                example: '{\n    "event_id": "event_2930",\n    "type": "response.created",\n    "response": {\n        "id": "resp_001",\n        "object": "realtime.response",\n        "status": "in_progress",\n        "status_details": null,\n        "output": [],\n        "usage": null\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.done",
+        content: "Returned when a Response is done streaming. Always emitted, no matter the final state. The Response object included in the `response.done` event will include all output Items in the Response but will omit the raw audio data.",
+        url: "/docs/api-reference/realtime-server-events/response/done",
+        relativeUrl: "realtime-server-events/response/done",
+        definition: {
+            type: "object",
+            description: "Returned when a Response is done streaming. Always emitted, no matter the final state. The Response object included in the `response.done` event will include all output Items in the Response but will omit the raw audio data.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.done".'
+                },
+                response: {
+                    type: "object",
+                    description: "The response resource.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the response."
+                        },
+                        object: {
+                            type: "string",
+                            description: "The object type, must be `realtime.response`."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The final status of the response (`completed`, `cancelled`, `failed`, `incomplete`)."
+                        },
+                        status_details: {
+                            type: "object",
+                            description: "Additional details about the status.",
+                            properties: {
+                                type: {
+                                    type: "string",
+                                    description: "The type of error that caused the response to fail, corresponding with the `status` field (`cancelled`, `incomplete`, `failed`)."
+                                },
+                                reason: {
+                                    type: "string",
+                                    description: "The reason the Response did not complete. For a `cancelled` Response, one of `turn_detected` (the server VAD detected a new start of speech) or `client_cancelled` (the client sent a cancel event). For an `incomplete` Response, one of `max_output_tokens` or `content_filter` (the server-side safety filter activated and cut off the response)."
+                                },
+                                error: {
+                                    type: "object",
+                                    description: "A description of the error that caused the response to fail, populated when the `status` is `failed`.",
+                                    properties: {
+                                        type: {
+                                            type: "string",
+                                            description: "The type of error."
+                                        },
+                                        code: {
+                                            type: "string",
+                                            description: "Error code, if any."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        output: {
+                            type: "array",
+                            description: "The list of output items generated by the response.",
+                            items: {
+                                type: "object",
+                                description: "An item in the response output."
+                            }
+                        },
+                        usage: {
+                            type: "object",
+                            description: "Usage statistics for the Response, this will correspond to billing. A Realtime API session will maintain a conversation context and append new Items to the Conversation, thus output from previous turns (text and audio tokens) will become the input for later turns.",
+                            properties: {
+                                total_tokens: {
+                                    type: "integer",
+                                    description: "The total number of tokens in the Response including input and output text and audio tokens."
+                                },
+                                input_tokens: {
+                                    type: "integer",
+                                    description: "The number of input tokens used in the Response, including text and audio tokens."
+                                },
+                                output_tokens: {
+                                    type: "integer",
+                                    description: "The number of output tokens sent in the Response, including text and audio tokens."
+                                },
+                                input_token_details: {
+                                    type: "object",
+                                    description: "Details about the input tokens used in the Response.",
+                                    properties: {
+                                        cached_tokens: {
+                                            type: "integer",
+                                            description: "The number of cached tokens used in the Response."
+                                        },
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                },
+                                output_token_details: {
+                                    type: "object",
+                                    description: "Details about the output tokens used in the Response.",
+                                    properties: {
+                                        text_tokens: {
+                                            type: "integer",
+                                            description: "The number of text tokens used in the Response."
+                                        },
+                                        audio_tokens: {
+                                            type: "integer",
+                                            description: "The number of audio tokens used in the Response."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response"],
+            "x-oaiMeta": {
+                name: "response.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_3132",\n    "type": "response.done",\n    "response": {\n        "id": "resp_001",\n        "object": "realtime.response",\n        "status": "completed",\n        "status_details": null,\n        "output": [\n            {\n                "id": "msg_006",\n                "object": "realtime.item",\n                "type": "message",\n                "status": "completed",\n                "role": "assistant",\n                "content": [\n                    {\n                        "type": "text",\n                        "text": "Sure, how can I assist you today?"\n                    }\n                ]\n            }\n        ],\n        "usage": {\n            "total_tokens":275,\n            "input_tokens":127,\n            "output_tokens":148,\n            "input_token_details": {\n                "cached_tokens":0,\n                "text_tokens":119,\n                "audio_tokens":8\n            },\n            "output_token_details": {\n              "text_tokens":36,\n              "audio_tokens":112\n            }\n        }\n    }\n}\n'
+            }
+        },
+        indent: 1
+    }, {
+        type: "objectgroup",
+        title: ".output_item",
+        url: "/docs/api-reference/realtime-server-events/response/output_item",
+        relativeUrl: "realtime-server-events/response/output_item",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".added",
+        title: "response.output_item.added",
+        content: "Returned when a new Item is created during Response generation.",
+        url: "/docs/api-reference/realtime-server-events/response/output_item/added",
+        relativeUrl: "realtime-server-events/response/output_item/added",
+        definition: {
+            type: "object",
+            description: "Returned when a new Item is created during Response generation.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `response.output_item.added`."
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the Response to which the item belongs."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the Response."
+                },
+                item: {
+                    type: "object",
+                    description: "The item to add to the conversation.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the item, this can be generated by the client to help manage server-side context, but is not required because the server will generate one if not provided."
+                        },
+                        type: {
+                            type: "string",
+                            description: "The type of the item (`message`, `function_call`, `function_call_output`)."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The status of the item (`completed`, `incomplete`). These have no effect on the conversation, but are accepted for consistency with the `conversation.item.created` event."
+                        },
+                        role: {
+                            type: "string",
+                            description: "The role of the message sender (`user`, `assistant`, `system`), only applicable for `message` items."
+                        },
+                        content: {
+                            type: "array",
+                            description: "The content of the message, applicable for `message` items. Message items with a role of `system` support only `input_text` content, message items of role `user` support `input_text` and `input_audio` content, and message items of role `assistant` support `text` content.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The content type (`input_text`, `input_audio`, `text`)."
+                                    },
+                                    text: {
+                                        type: "string",
+                                        description: "The text content, used for `input_text` and `text` content types."
+                                    },
+                                    audio: {
+                                        type: "string",
+                                        description: "Base64-encoded audio bytes, used for `input_audio` content type."
+                                    },
+                                    transcript: {
+                                        type: "string",
+                                        description: "The transcript of the audio, used for `input_audio` content type."
+                                    }
+                                }
+                            }
+                        },
+                        call_id: {
+                            type: "string",
+                            description: "The ID of the function call (for `function_call` and `function_call_output` items). If passed on a `function_call_output` item, the server will check that a `function_call` item with the same ID exists in the conversation history."
+                        },
+                        name: {
+                            type: "string",
+                            description: "The name of the function being called (for `function_call` items)."
+                        },
+                        arguments: {
+                            type: "string",
+                            description: "The arguments of the function call (for `function_call` items)."
+                        },
+                        output: {
+                            type: "string",
+                            description: "The output of the function call (for `function_call_output` items)."
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response_id", "output_index", "item"],
+            "x-oaiMeta": {
+                name: "response.output_item.added",
+                group: "realtime",
+                example: '{\n    "event_id": "event_3334",\n    "type": "response.output_item.added",\n    "response_id": "resp_001",\n    "output_index": 0,\n    "item": {\n        "id": "msg_007",\n        "object": "realtime.item",\n        "type": "message",\n        "status": "in_progress",\n        "role": "assistant",\n        "content": []\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.output_item.done",
+        content: "Returned when an Item is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+        url: "/docs/api-reference/realtime-server-events/response/output_item/done",
+        relativeUrl: "realtime-server-events/response/output_item/done",
+        definition: {
+            type: "object",
+            description: "Returned when an Item is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `response.output_item.done`."
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the Response to which the item belongs."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the Response."
+                },
+                item: {
+                    type: "object",
+                    description: "The item to add to the conversation.",
+                    properties: {
+                        id: {
+                            type: "string",
+                            description: "The unique ID of the item, this can be generated by the client to help manage server-side context, but is not required because the server will generate one if not provided."
+                        },
+                        type: {
+                            type: "string",
+                            description: "The type of the item (`message`, `function_call`, `function_call_output`)."
+                        },
+                        status: {
+                            type: "string",
+                            description: "The status of the item (`completed`, `incomplete`). These have no effect on the conversation, but are accepted for consistency with the `conversation.item.created` event."
+                        },
+                        role: {
+                            type: "string",
+                            description: "The role of the message sender (`user`, `assistant`, `system`), only applicable for `message` items."
+                        },
+                        content: {
+                            type: "array",
+                            description: "The content of the message, applicable for `message` items. Message items with a role of `system` support only `input_text` content, message items of role `user` support `input_text` and `input_audio` content, and message items of role `assistant` support `text` content.",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    type: {
+                                        type: "string",
+                                        description: "The content type (`input_text`, `input_audio`, `text`)."
+                                    },
+                                    text: {
+                                        type: "string",
+                                        description: "The text content, used for `input_text` and `text` content types."
+                                    },
+                                    audio: {
+                                        type: "string",
+                                        description: "Base64-encoded audio bytes, used for `input_audio` content type."
+                                    },
+                                    transcript: {
+                                        type: "string",
+                                        description: "The transcript of the audio, used for `input_audio` content type."
+                                    }
+                                }
+                            }
+                        },
+                        call_id: {
+                            type: "string",
+                            description: "The ID of the function call (for `function_call` and `function_call_output` items). If passed on a `function_call_output` item, the server will check that a `function_call` item with the same ID exists in the conversation history."
+                        },
+                        name: {
+                            type: "string",
+                            description: "The name of the function being called (for `function_call` items)."
+                        },
+                        arguments: {
+                            type: "string",
+                            description: "The arguments of the function call (for `function_call` items)."
+                        },
+                        output: {
+                            type: "string",
+                            description: "The output of the function call (for `function_call_output` items)."
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response_id", "output_index", "item"],
+            "x-oaiMeta": {
+                name: "response.output_item.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_3536",\n    "type": "response.output_item.done",\n    "response_id": "resp_001",\n    "output_index": 0,\n    "item": {\n        "id": "msg_007",\n        "object": "realtime.item",\n        "type": "message",\n        "status": "completed",\n        "role": "assistant",\n        "content": [\n            {\n                "type": "text",\n                "text": "Sure, I can help with that."\n            }\n        ]\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".content_part",
+        url: "/docs/api-reference/realtime-server-events/response/content_part",
+        relativeUrl: "realtime-server-events/response/content_part",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".added",
+        title: "response.content_part.added",
+        content: "Returned when a new content part is added to an assistant message item during response generation.",
+        url: "/docs/api-reference/realtime-server-events/response/content_part/added",
+        relativeUrl: "realtime-server-events/response/content_part/added",
+        definition: {
+            type: "object",
+            description: "Returned when a new content part is added to an assistant message item during response generation.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.content_part.added".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item to which the content part was added."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                part: {
+                    type: "object",
+                    description: "The content part that was added.",
+                    properties: {
+                        type: {
+                            type: "string",
+                            description: 'The content type ("text", "audio").'
+                        },
+                        text: {
+                            type: "string",
+                            description: 'The text content (if type is "text").'
+                        },
+                        audio: {
+                            type: "string",
+                            description: 'Base64-encoded audio data (if type is "audio").'
+                        },
+                        transcript: {
+                            type: "string",
+                            description: 'The transcript of the audio (if type is "audio").'
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "part"],
+            "x-oaiMeta": {
+                name: "response.content_part.added",
+                group: "realtime",
+                example: '{\n    "event_id": "event_3738",\n    "type": "response.content_part.added",\n    "response_id": "resp_001",\n    "item_id": "msg_007",\n    "output_index": 0,\n    "content_index": 0,\n    "part": {\n        "type": "text",\n        "text": ""\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.content_part.done",
+        content: "Returned when a content part is done streaming in an assistant message item. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+        url: "/docs/api-reference/realtime-server-events/response/content_part/done",
+        relativeUrl: "realtime-server-events/response/content_part/done",
+        definition: {
+            type: "object",
+            description: "Returned when a content part is done streaming in an assistant message item. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.content_part.done".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                part: {
+                    type: "object",
+                    description: "The content part that is done.",
+                    properties: {
+                        type: {
+                            type: "string",
+                            description: 'The content type ("text", "audio").'
+                        },
+                        text: {
+                            type: "string",
+                            description: 'The text content (if type is "text").'
+                        },
+                        audio: {
+                            type: "string",
+                            description: 'Base64-encoded audio data (if type is "audio").'
+                        },
+                        transcript: {
+                            type: "string",
+                            description: 'The transcript of the audio (if type is "audio").'
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "part"],
+            "x-oaiMeta": {
+                name: "response.content_part.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_3940",\n    "type": "response.content_part.done",\n    "response_id": "resp_001",\n    "item_id": "msg_007",\n    "output_index": 0,\n    "content_index": 0,\n    "part": {\n        "type": "text",\n        "text": "Sure, I can help with that."\n    }\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".text",
+        url: "/docs/api-reference/realtime-server-events/response/text",
+        relativeUrl: "realtime-server-events/response/text",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".delta",
+        title: "response.text.delta",
+        content: 'Returned when the text value of a "text" content part is updated.',
+        url: "/docs/api-reference/realtime-server-events/response/text/delta",
+        relativeUrl: "realtime-server-events/response/text/delta",
+        definition: {
+            type: "object",
+            description: 'Returned when the text value of a "text" content part is updated.',
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.text.delta".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                delta: {
+                    type: "string",
+                    description: "The text delta."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "delta"],
+            "x-oaiMeta": {
+                name: "response.text.delta",
+                group: "realtime",
+                example: '{\n    "event_id": "event_4142",\n    "type": "response.text.delta",\n    "response_id": "resp_001",\n    "item_id": "msg_007",\n    "output_index": 0,\n    "content_index": 0,\n    "delta": "Sure, I can h"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.text.done",
+        content: 'Returned when the text value of a "text" content part is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.',
+        url: "/docs/api-reference/realtime-server-events/response/text/done",
+        relativeUrl: "realtime-server-events/response/text/done",
+        definition: {
+            type: "object",
+            description: 'Returned when the text value of a "text" content part is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.',
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.text.done".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                text: {
+                    type: "string",
+                    description: "The final text content."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "text"],
+            "x-oaiMeta": {
+                name: "response.text.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_4344",\n    "type": "response.text.done",\n    "response_id": "resp_001",\n    "item_id": "msg_007",\n    "output_index": 0,\n    "content_index": 0,\n    "text": "Sure, I can help with that."\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".audio_transcript",
+        url: "/docs/api-reference/realtime-server-events/response/audio_transcript",
+        relativeUrl: "realtime-server-events/response/audio_transcript",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".delta",
+        title: "response.audio_transcript.delta",
+        content: "Returned when the model-generated transcription of audio output is updated.",
+        url: "/docs/api-reference/realtime-server-events/response/audio_transcript/delta",
+        relativeUrl: "realtime-server-events/response/audio_transcript/delta",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated transcription of audio output is updated.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.audio_transcript.delta".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                delta: {
+                    type: "string",
+                    description: "The transcript delta."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "delta"],
+            "x-oaiMeta": {
+                name: "response.audio_transcript.delta",
+                group: "realtime",
+                example: '{\n    "event_id": "event_4546",\n    "type": "response.audio_transcript.delta",\n    "response_id": "resp_001",\n    "item_id": "msg_008",\n    "output_index": 0,\n    "content_index": 0,\n    "delta": "Hello, how can I a"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.audio_transcript.done",
+        content: "Returned when the model-generated transcription of audio output is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+        url: "/docs/api-reference/realtime-server-events/response/audio_transcript/done",
+        relativeUrl: "realtime-server-events/response/audio_transcript/done",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated transcription of audio output is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.audio_transcript.done".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                transcript: {
+                    type: "string",
+                    description: "The final transcript of the audio."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "transcript"],
+            "x-oaiMeta": {
+                name: "response.audio_transcript.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_4748",\n    "type": "response.audio_transcript.done",\n    "response_id": "resp_001",\n    "item_id": "msg_008",\n    "output_index": 0,\n    "content_index": 0,\n    "transcript": "Hello, how can I assist you today?"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".audio",
+        url: "/docs/api-reference/realtime-server-events/response/audio",
+        relativeUrl: "realtime-server-events/response/audio",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".delta",
+        title: "response.audio.delta",
+        content: "Returned when the model-generated audio is updated.",
+        url: "/docs/api-reference/realtime-server-events/response/audio/delta",
+        relativeUrl: "realtime-server-events/response/audio/delta",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated audio is updated.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.audio.delta".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                },
+                delta: {
+                    type: "string",
+                    description: "Base64-encoded audio data delta."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index", "delta"],
+            "x-oaiMeta": {
+                name: "response.audio.delta",
+                group: "realtime",
+                example: '{\n    "event_id": "event_4950",\n    "type": "response.audio.delta",\n    "response_id": "resp_001",\n    "item_id": "msg_008",\n    "output_index": 0,\n    "content_index": 0,\n    "delta": "Base64EncodedAudioDelta"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.audio.done",
+        content: "Returned when the model-generated audio is done. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+        url: "/docs/api-reference/realtime-server-events/response/audio/done",
+        relativeUrl: "realtime-server-events/response/audio/done",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated audio is done. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.audio.done".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                content_index: {
+                    type: "integer",
+                    description: "The index of the content part in the item's content array."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "content_index"],
+            "x-oaiMeta": {
+                name: "response.audio.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_5152",\n    "type": "response.audio.done",\n    "response_id": "resp_001",\n    "item_id": "msg_008",\n    "output_index": 0,\n    "content_index": 0\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: ".function_call_arguments",
+        url: "/docs/api-reference/realtime-server-events/response/function_call_arguments",
+        relativeUrl: "realtime-server-events/response/function_call_arguments",
+        indent: 1
+    }, {
+        type: "object",
+        navTitle: ".delta",
+        title: "response.function_call_arguments.delta",
+        content: "Returned when the model-generated function call arguments are updated.",
+        url: "/docs/api-reference/realtime-server-events/response/function_call_arguments/delta",
+        relativeUrl: "realtime-server-events/response/function_call_arguments/delta",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated function call arguments are updated.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.function_call_arguments.delta".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the function call item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                call_id: {
+                    type: "string",
+                    description: "The ID of the function call."
+                },
+                delta: {
+                    type: "string",
+                    description: "The arguments delta as a JSON string."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "call_id", "delta"],
+            "x-oaiMeta": {
+                name: "response.function_call_arguments.delta",
+                group: "realtime",
+                example: '{\n    "event_id": "event_5354",\n    "type": "response.function_call_arguments.delta",\n    "response_id": "resp_002",\n    "item_id": "fc_001",\n    "output_index": 0,\n    "call_id": "call_001",\n    "delta": "{\\"location\\": \\"San\\""\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "object",
+        navTitle: ".done",
+        title: "response.function_call_arguments.done",
+        content: "Returned when the model-generated function call arguments are done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+        url: "/docs/api-reference/realtime-server-events/response/function_call_arguments/done",
+        relativeUrl: "realtime-server-events/response/function_call_arguments/done",
+        definition: {
+            type: "object",
+            description: "Returned when the model-generated function call arguments are done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.",
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: 'The event type, must be "response.function_call_arguments.done".'
+                },
+                response_id: {
+                    type: "string",
+                    description: "The ID of the response."
+                },
+                item_id: {
+                    type: "string",
+                    description: "The ID of the function call item."
+                },
+                output_index: {
+                    type: "integer",
+                    description: "The index of the output item in the response."
+                },
+                call_id: {
+                    type: "string",
+                    description: "The ID of the function call."
+                },
+                arguments: {
+                    type: "string",
+                    description: "The final arguments as a JSON string."
+                }
+            },
+            required: ["event_id", "type", "response_id", "item_id", "output_index", "call_id", "arguments"],
+            "x-oaiMeta": {
+                name: "response.function_call_arguments.done",
+                group: "realtime",
+                example: '{\n    "event_id": "event_5556",\n    "type": "response.function_call_arguments.done",\n    "response_id": "resp_002",\n    "item_id": "fc_001",\n    "output_index": 0,\n    "call_id": "call_001",\n    "arguments": "{\\"location\\": \\"San Francisco\\"}"\n}\n'
+            }
+        },
+        indent: 2
+    }, {
+        type: "objectgroup",
+        title: "rate_limits",
+        url: "/docs/api-reference/realtime-server-events/rate_limits",
+        relativeUrl: "realtime-server-events/rate_limits",
+        indent: 0
+    }, {
+        type: "object",
+        navTitle: ".updated",
+        title: "rate_limits.updated",
+        content: 'Emitted at the beginning of a Response to indicate the updated rate limits. When a Response is created some tokens will be "reserved" for the output tokens, the rate limits shown here reflect that reservation, which is then adjusted accordingly once the Response is completed.',
+        url: "/docs/api-reference/realtime-server-events/rate_limits/updated",
+        relativeUrl: "realtime-server-events/rate_limits/updated",
+        definition: {
+            type: "object",
+            description: 'Emitted at the beginning of a Response to indicate the updated rate limits. When a Response is created some tokens will be "reserved" for the output tokens, the rate limits shown here reflect that reservation, which is then adjusted accordingly once the Response is completed.',
+            properties: {
+                event_id: {
+                    type: "string",
+                    description: "The unique ID of the server event."
+                },
+                type: {
+                    type: "string",
+                    description: "The event type, must be `rate_limits.updated`."
+                },
+                rate_limits: {
+                    type: "array",
+                    description: "List of rate limit information.",
+                    items: {
+                        type: "object",
+                        properties: {
+                            name: {
+                                type: "string",
+                                description: "The name of the rate limit (`requests`, `tokens`)."
+                            },
+                            limit: {
+                                type: "integer",
+                                description: "The maximum allowed value for the rate limit."
+                            },
+                            remaining: {
+                                type: "integer",
+                                description: "The remaining value before the limit is reached."
+                            },
+                            reset_seconds: {
+                                type: "number",
+                                description: "Seconds until the rate limit resets."
+                            }
+                        }
+                    }
+                }
+            },
+            required: ["event_id", "type", "rate_limits"],
+            "x-oaiMeta": {
+                name: "rate_limits.updated",
+                group: "realtime",
+                example: '{\n    "event_id": "event_5758",\n    "type": "rate_limits.updated",\n    "rate_limits": [\n        {\n            "name": "requests",\n            "limit": 1000,\n            "remaining": 999,\n            "reset_seconds": 60\n        },\n        {\n            "name": "tokens",\n            "limit": 50000,\n            "remaining": 49950,\n            "reset_seconds": 60\n        }\n    ]\n}\n'
+            }
+        },
+        indent: 1
+    }]
+}
+]
