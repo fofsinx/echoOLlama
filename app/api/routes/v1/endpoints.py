@@ -1,27 +1,27 @@
-from typing import List
+from typing import Dict
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from app.services.llm import LLMService, ModelProvider
+
 from app.dependencies import get_llm_service
 from app.schemas.requests import (
     GenerateRequest,
     ChatRequest,
-    PullRequest
-)
-from app.schemas import (
+    PullRequest,
     GenerateResponse,
     ChatResponse,
-    ModelInfo,
     PullResponse
 )
+from app.services.llm import LLMService, ModelProvider
 from app.utils.logger import logger
 
 router = APIRouter()
 
+
 @router.post("/generate")
 async def generate_response(
-    request: GenerateRequest,
-    llm_service: LLMService = Depends(get_llm_service)
+        request: GenerateRequest,
+        llm_service: LLMService = Depends(get_llm_service)
 ):
     """
     Generate a response using the specified model
@@ -38,7 +38,7 @@ async def generate_response(
                 ),
                 media_type="text/event-stream"
             )
-        
+
         response = await llm_service.generate_response(
             messages=request.messages,
             temperature=request.temperature,
@@ -50,15 +50,16 @@ async def generate_response(
             response=response.choices[0].message.content,
             done=True
         )
-        
+
     except Exception as e:
         logger.error(f"❌ endpoints.py: Generate response failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/chat")
 async def chat_with_model(
-    request: ChatRequest,
-    llm_service: LLMService = Depends(get_llm_service)
+        request: ChatRequest,
+        llm_service: LLMService = Depends(get_llm_service)
 ):
     """
     Have a conversation with the model
@@ -73,14 +74,14 @@ async def chat_with_model(
                 ),
                 media_type="text/event-stream"
             )
-        
+
         response = await llm_service.generate_response(
             messages=[m.model_dump() for m in request.messages],
             temperature=0.8,
             stream=False,
             provider=ModelProvider.OLLAMA if "llama" in request.model.lower() else ModelProvider.OPENAI
         )
-        
+
         return ChatResponse(
             model=request.model,
             message={
@@ -89,14 +90,15 @@ async def chat_with_model(
             },
             done=True
         )
-        
+
     except Exception as e:
         logger.error(f"❌ endpoints.py: Chat with model failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/models", response_model=List[ModelInfo])
+
+@router.get("/models", response_model=Dict)
 async def list_models(
-    llm_service: LLMService = Depends(get_llm_service)
+        llm_service: LLMService = Depends(get_llm_service)
 ):
     """
     List all available models
@@ -104,72 +106,54 @@ async def list_models(
     """
     try:
         # Get models from both providers
-        ollama_models = await llm_service.ollama_client.models.list()
-        openai_models = await llm_service.openai_client.models.list()
-        
-        models = []
-        
-        # Add Ollama models
-        for model in ollama_models.data:
-            models.append(ModelInfo(
-                id=model.id,
-                name=model.id,
-                provider=ModelProvider.OLLAMA.value
-            ))
-            
-        # Add OpenAI models
-        for model in openai_models.data:
-            if "gpt" in model.id:  # Filter for GPT models
-                models.append(ModelInfo(
-                    id=model.id,
-                    name=model.id,
-                    provider=ModelProvider.OPENAI.value
-                ))
-                
-        return models
-        
+        ollama_models = await llm_service.ollama_client.list()
+        return ollama_models
+
     except Exception as e:
         logger.error(f"❌ endpoints.py: List models failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/model/pull", response_model=PullResponse)
 async def pull_model(
-    request: PullRequest,
-    llm_service: LLMService = Depends(get_llm_service)
+        request: PullRequest,
+        llm_service: LLMService = Depends(get_llm_service)
 ):
     """
     Pull a model from the provider
     📝 File: endpoints.py, Line: 144, Function: pull_model
     """
     try:
-        if "llama" in request.name.lower():
+        if "ollama" in request.provider.lower():
             # Only Ollama supports model pulling
-            response = await llm_service.ollama_client.models.pull(request.name)
+            await llm_service.ollama_client.pull(request.name)
             return PullResponse(status="success", model=request.name)
         else:
             raise HTTPException(status_code=400, detail="Model pulling only supported for Ollama models")
-            
+
     except Exception as e:
         logger.error(f"❌ endpoints.py: Pull model failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.delete("/model/{model_name}")
 async def delete_model(
-    model_name: str,
-    llm_service: LLMService = Depends(get_llm_service)
+        model_name: str,
+        provider: str = "ollama",
+        llm_service: LLMService = Depends(get_llm_service)
 ):
     """
     Delete a model
     📝 File: endpoints.py, Line: 166, Function: delete_model
     """
     try:
-        if "llama" in model_name.lower():
+        if "ollama" in provider.lower():
             # Only Ollama supports model deletion
-            await llm_service.ollama_client.models.delete(model_name)
+            await llm_service.ollama_client.delete(model_name)
             return {"status": "success", "message": f"Model {model_name} deleted"}
         else:
             raise HTTPException(status_code=400, detail="Model deletion only supported for Ollama models")
-            
+
     except Exception as e:
         logger.error(f"❌ endpoints.py: Delete model failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
