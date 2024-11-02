@@ -1,7 +1,6 @@
 import asyncio
 from typing import Dict, Optional, Any
 from fastapi.websockets import WebSocket, WebSocketDisconnect
-from app.websocket.handlers import WebSocketHandler, MessageType, WebSocketEvent
 from app.services.chat_state import ChatStateManager
 from app.db.database import Database
 from app.utils.errors import WebSocketError, handle_websocket_error
@@ -10,6 +9,8 @@ from datetime import datetime
 import json
 import uuid
 from app.utils.logger import logger
+from app.websocket.handlers.main import WebSocketHandler
+from app.websocket.types import WebSocketEvent, MessageType
 
 
 class WebSocketConnection:
@@ -17,6 +18,7 @@ class WebSocketConnection:
     WebSocket connection manager with enhanced error handling, state management,
     and real-time audio/text processing capabilities
     """
+
     def __init__(self, websocket: WebSocket, db: Database):
         """
         Initialize WebSocket connection with necessary services
@@ -39,7 +41,7 @@ class WebSocketConnection:
         try:
             await self.websocket.accept()
             self.is_connected = True
-            
+
             # Initialize session with retry logic
             retry_count = 3
             for attempt in range(retry_count):
@@ -50,15 +52,15 @@ class WebSocketConnection:
                     if attempt == retry_count - 1:
                         raise
                     await asyncio.sleep(1)
-            
+
             logger.info(
                 f"🔌 connection.py: New WebSocket connection established - "
                 f"Client ID: {self.client_id}, Session: {self.current_session_id}"
             )
-            
+
             # Start heartbeat
             self.heartbeat_task = asyncio.create_task(self._heartbeat())
-            
+
             # Send connection confirmation
             await self._send_connection_confirmed(self.current_session_id)
 
@@ -90,7 +92,7 @@ class WebSocketConnection:
             self._validate_message(message)
             if not self.current_session_id:
                 raise WebSocketError("No active session", code=4003)
-            
+
             message_type = message["type"]
             logger.info(f"📨 connection.py: Handling message type: {message_type}")
 
@@ -155,11 +157,11 @@ class WebSocketConnection:
                 self.websocket.receive_json(),
                 timeout=settings.WS_HEARTBEAT_INTERVAL
             )
-            
+
             # Basic JSON schema validation
             if not isinstance(message, dict):
                 raise WebSocketError("Invalid message format", code=4000)
-                
+
             return message
         except json.JSONDecodeError as e:
             logger.error(f"❌ connection.py: Invalid JSON received: {str(e)}")
@@ -184,14 +186,14 @@ class WebSocketConnection:
                     "timestamp": current_time.isoformat(),
                     "session_id": self.current_session_id
                 })
-                
+
                 # Update last activity timestamp
                 if self.current_session_id:
                     await self.db.update_session_activity(
                         self.current_session_id,
                         current_time
                     )
-                    
+
                 await asyncio.sleep(settings.WS_HEARTBEAT_INTERVAL)
             except Exception as e:
                 logger.error(f"❌ connection.py: Heartbeat error: {str(e)}")
@@ -275,3 +277,6 @@ class WebSocketConnection:
             logger.info(f"🧹 connection.py: Cleanup completed for client {self.client_id}")
         except Exception as e:
             logger.error(f"❌ connection.py: Cleanup failed: {str(e)}")
+
+    async def cleanup(self):
+        return await self._cleanup()
