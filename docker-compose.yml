@@ -5,9 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ai_chat_api
+    container_name: ollamagate-api
     ports:
-      - "8000:8000"
+      - "9009:9009"
     environment:
       - ENVIRONMENT=development
       - DEBUG=True
@@ -45,7 +45,7 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: ai_chat_redis
+    container_name: ollamagate-redis
     ports:
       - "6379:6379"
     volumes:
@@ -59,7 +59,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: ai_chat_ollama
+    container_name: ollamagate-ollama
     ports:
       - "11434:11434"
     volumes:
@@ -79,7 +79,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: ai_chat_prometheus
+    container_name: olamagate-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -93,7 +93,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: ai_chat_grafana
+    container_name: ollama-grafana
     ports:
       - "3000:3000"
     volumes:
@@ -103,12 +103,31 @@ services:
     depends_on:
       - prometheus
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: ollama-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=ollamagateuser
+      - POSTGRES_PASSWORD=ollamagate
+      - POSTGRES_DB=ollamagate
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  openedai-speech:
+    image: ghcr.io/matatonic/openedai-speech-min:dev
+    container_name: openedai-speech
+    ports:
+      - "8000:8000"
+
 volumes:
   redis_data:
   ollama_models:
   speech_cache:
   prometheus_data:
   grafana_data:
+  postgres_data:
 
 networks:
   default:
