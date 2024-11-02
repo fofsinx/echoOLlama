@@ -104,7 +104,7 @@ services:
       - prometheus
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: ollama-postgres
     ports:
       - "5432:5432"
