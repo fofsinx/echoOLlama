@@ -34,6 +34,7 @@ class LLMService:
         self.ollama_client = ollama.AsyncClient(
             host=settings.OLLAMA_API_BASE_URL
         )
+        self.model = settings.OLLAMA_MODEL
 
         logger.info("🤖 llm.py: LLM service initialized with unified OpenAI SDK")
 
@@ -54,7 +55,7 @@ class LLMService:
             client = self.ollama_client if provider == ModelProvider.OLLAMA else None
             if client is None:
                 raise ValueError("Invalid provider")
-            model = model if model is not None else settings.OLLAMA_MODEL if provider == ModelProvider.OLLAMA else None
+            model = model if model is not None else self.model if provider == ModelProvider.OLLAMA else None
 
             if model is None:
                 raise ValueError("Model not specified")
@@ -140,3 +141,11 @@ class LLMService:
         except Exception as e:
             logger.error(f"❌ llm.py: Function call processing failed: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    def set_default_model(self, model: str) -> None:
+        """
+        Set default model for Ollama
+        📝 File: llm.py, Line: 137, Function: set_default_model
+        """
+        self.model = model
+        logger.info(f"🤖 llm.py: Default model set to {model}")

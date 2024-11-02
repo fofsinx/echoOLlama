@@ -151,7 +151,7 @@ class AudioService:
         try:
             temp_path = os.path.join(
                 self.temp_dir,
-                f"{event_id}_{datetime.utcnow().timestamp()}.wav"
+                f"{event_id}_{datetime.now().timestamp()}.wav"
             )
 
             with open(temp_path, "wb") as f:
@@ -162,6 +162,9 @@ class AudioService:
         except Exception as e:
             logger.error(f"❌ audio.py: Failed to save audio buffer: {str(e)}")
             raise AudioProcessingError("Failed to save audio data")
+
+    async def commit_audio_buffer(self, audio_data: bytes, event_id: str) -> None:
+        pass
 
     async def cleanup(self) -> None:
         """

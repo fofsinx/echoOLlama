@@ -1,11 +1,13 @@
 import asyncio
 from typing import Dict, Optional, Any
-from fastapi.websockets import WebSocket, WebSocketDisconnect
+from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from app.db.models import to_pydantic
+from app.schemas.models import SessionSchema
 from app.services.chat_state import ChatStateManager
 from app.db.database import Database
 from app.utils.errors import WebSocketError, handle_websocket_error
 from app.config import settings
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import uuid
 from app.utils.logger import logger
@@ -42,11 +44,14 @@ class WebSocketConnection:
             await self.websocket.accept()
             self.is_connected = True
 
+            session = None
+
             # Initialize session with retry logic
             retry_count = 3
             for attempt in range(retry_count):
                 try:
                     self.current_session_id = await self._initialize_session()
+                    session = await self.db.get_session(self.current_session_id)
                     break
                 except Exception as e:
                     if attempt == retry_count - 1:
@@ -62,9 +67,9 @@ class WebSocketConnection:
             self.heartbeat_task = asyncio.create_task(self._heartbeat())
 
             # Send connection confirmation
-            await self._send_connection_confirmed(self.current_session_id)
+            await self._send_connection_confirmed(to_pydantic(session, SessionSchema).model_dump())
 
-            while self.is_connected:
+            while self.is_connected and self.websocket.client_state == WebSocketState.CONNECTED:
                 try:
                     message = await self._receive_message()
                     if message:
@@ -75,12 +80,19 @@ class WebSocketConnection:
                     logger.error(f"❌ connection.py: Message processing error: {str(e)}")
                     await self._send_error(str(e))
 
-        except WebSocketDisconnect:
-            logger.info(f"🔌 connection.py: Client {self.client_id} disconnected")
+        except WebSocketDisconnect as e:
+            logger.error(f"❌ connection.py: Client {self.client_id} disconnected: {e}")
         except Exception as e:
             logger.error(f"❌ connection.py: Connection error: {str(e)}")
         finally:
             await self._cleanup()
+
+    def set_model(self, model: str) -> None:
+        """
+        Set model for the current session
+        📝 File: connection.py, Line: 64, Function: set_model
+        """
+        self.handler.set_model(model)
 
     async def handle_message(self, message: Dict[str, Any]) -> None:
         """
@@ -99,18 +111,22 @@ class WebSocketConnection:
             # Check rate limits
             await self._check_rate_limits()
 
+            logger.info(f"📨 connection.py: Enriched message: {message}")
+
             # Enrich message with session data
             enriched_message = await self._enrich_message(message)
 
+
             # Create WebSocketEvent instance
             event = WebSocketEvent(
-                event_id=enriched_message.get("event_id", str(uuid.uuid4())),
+                event_id=enriched_message.get("event_id", f"event_{str(uuid.uuid4())}"),
                 type=MessageType(message_type),
                 data=enriched_message
             )
 
             # Handle the message through main handler
-            await self.handler.handle_message(event)
+            logger.info(f"📨 connection.py: Handling message: {event}")
+            # await self.handler.handle_message(event)
 
         except WebSocketError as e:
             await self._send_error(e.message, e.code)
@@ -126,23 +142,13 @@ class WebSocketConnection:
         session_id = str(uuid.uuid4())
         session_data = {
             "id": session_id,
-            "client_id": self.client_id,
-            "status": "active",
-            "model": settings.GPT_MODEL,
-            "modalities": ["text"],
-            "voice": None,
-            "temperature": 0.7,
-            "created_at": datetime.utcnow(),
-            "metadata": {
-                "user_agent": str(self.websocket.headers.get("user-agent")),
-                "ip": str(self.websocket.client.host)
-            }
+            "model": self.handler.llm_service.model,
+            "modalities": ['text']
         }
 
         # Add audio modality if enabled
         if settings.TTS_ENGINE:
             session_data["modalities"].append("audio")
-            session_data["voice"] = settings.TTS_MODEL
 
         await self.db.create_session(session_data)
         return session_id
@@ -152,12 +158,11 @@ class WebSocketConnection:
         Receive and parse WebSocket message with timeout and validation
         📝 File: connection.py, Line: 140, Function: _receive_message
         """
+        if self.websocket.client_state != WebSocketState.CONNECTED:
+            return None
         try:
-            message = await asyncio.wait_for(
-                self.websocket.receive_json(),
-                timeout=settings.WS_HEARTBEAT_INTERVAL
-            )
-
+            message = await self.websocket.receive_json()
+            logger.info(f"📨 connection.py: Received message: {message}")
             # Basic JSON schema validation
             if not isinstance(message, dict):
                 raise WebSocketError("Invalid message format", code=4000)
@@ -180,19 +185,12 @@ class WebSocketConnection:
         """
         while self.is_connected:
             try:
-                current_time = datetime.utcnow()
-                await self.websocket.send_json({
+                current_time = datetime.now()
+                await self.websocket.send_text(json.dumps({
                     "type": "heartbeat",
                     "timestamp": current_time.isoformat(),
                     "session_id": self.current_session_id
-                })
-
-                # Update last activity timestamp
-                if self.current_session_id:
-                    await self.db.update_session_activity(
-                        self.current_session_id,
-                        current_time
-                    )
+                }))
 
                 await asyncio.sleep(settings.WS_HEARTBEAT_INTERVAL)
             except Exception as e:
@@ -204,9 +202,14 @@ class WebSocketConnection:
         Check and update rate limits
         📝 File: connection.py, Line: 172, Function: _check_rate_limits
         """
-        rate_limits = await self.db.get_rate_limits(self.client_id)
-        if rate_limits["requests"]["remaining"] <= 0:
-            raise WebSocketError("Rate limit exceeded", code=4029)
+        rate_limits = await self.db.get_session_rate_limits(self.client_id)
+        logger.info(f"📨 connection.py: Rate limits: {rate_limits}")
+        if len(rate_limits) == 0:
+            return
+        for limit_type, limit in rate_limits.items():
+            if limit["remaining"] <= 0:
+                raise WebSocketError(f"Rate limit exceeded for {limit_type} ({limit['reset_seconds']} seconds)", code=4029)
+        
         await self.db.update_rate_limits(self.client_id, self.current_session_id)
 
     def _validate_message(self, message: Dict[str, Any]) -> None:
@@ -214,10 +217,8 @@ class WebSocketConnection:
         Validate message structure
         📝 File: connection.py, Line: 182, Function: _validate_message
         """
-        if not isinstance(message, dict):
-            raise WebSocketError("Invalid message format", code=4000)
-        if "type" not in message:
-            raise WebSocketError("Message type is required", code=4001)
+        if not isinstance(message, dict) or "type" not in message:
+            raise WebSocketError("Message type is required", code=4001) 
 
     async def _enrich_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -232,26 +233,25 @@ class WebSocketConnection:
             "state": state
         }
 
-    async def _send_connection_confirmed(self, session_id: str) -> None:
+    async def _send_connection_confirmed(self, session: Dict[str, Any]) -> None:
         """
         Send connection confirmation with session details
         📝 File: connection.py, Line: 205, Function: _send_connection_confirmed
         """
-        await self.websocket.send_json({
-            "type": "connected",
-            "data": {
-                "client_id": self.client_id,
-                "session_id": session_id,
-                "timestamp": datetime.now(datetime.UTC).isoformat(),
-                "config": {
-                    "heartbeat_interval": settings.WS_HEARTBEAT_INTERVAL,
-                    "rate_limits": {
-                        "requests": settings.RATE_LIMIT_REQUESTS,
-                        "tokens": settings.RATE_LIMIT_TOKENS
-                    }
-                }
-            }
-        })
+        logger.info(f"📨 connection.py: Sending connection confirmed message")
+        logger.info(f"📨 connection.py: WebSocket client state: {self.websocket.client_state}")
+        if self.websocket.client_state != WebSocketState.CONNECTED:
+            return
+        try:
+            await self.websocket.send_json({
+                "type": "session.created",
+                "event_id": f"event_{str(uuid.uuid4())}",
+                "session": {**session, "expires_at": (datetime.now() + timedelta(seconds=settings.SESSION_EXPIRATION_TIME)).isoformat()}
+            })
+        except WebSocketDisconnect as e:
+            logger.error(f"❌ connection.py: Line 250: {e.code} WebSocket disconnected: {e.reason}")
+        except Exception as e:
+            logger.error(f"❌ connection.py: Line 252: Failed to send connection confirmed message: {str(e)}")
 
     async def _send_error(self, message: str, code: int = 400) -> None:
         """

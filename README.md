@@ -4,11 +4,16 @@
 > 
 > This project is currently under active development and is not yet ready for production use. Features may be incomplete, unstable, or subject to significant changes. Use at your own risk.
 
-
 ![🦙 LlamaGate Banner](https://th.bing.com/th/id/OIP.VQdoScLwOdGsiJvrnEMiFgHaHa?w=626&h=626&rs=1&pid=ImgDetMain)
 
 ## 🎯 Mission
 🦙 LlamaGate is an open-source alternative to OpenAI's API suite, providing a unified interface for AI capabilities using Ollama and other open-source tools. It's designed to be a drop-in replacement for OpenAI's API, making it easy to switch from cloud-based to local AI solutions.
+
+> 🚧 **Currently it works as replacement for OpenAI Realtime API** 🚧
+>
+> Running inside openai's official realtime api console look like this:
+>
+> ![🦙 LlamaGate Banner](https://github.com/user-attachments/assets/5ce20abf-6982-4b6b-a824-58f7d91ef7cd)
 
 ## 🌟 Features
 
@@ -29,12 +34,14 @@
 
 ```mermaid
 graph TD
-    A[Client] --> B[API Gateway]
-    B --> C{Service Router}
+    A[Client] --> B[API Gateway] --> C[Websocket Connection] 
     C --> D[Chat Service]
     C --> E[Speech Service]
     C --> F[Transcription Service]
-    D --> H[Ollama]
+    C --> G[Ollama]
+    C --> H[Function Calling Service]
+    C --> I[Rate Limiting Service]
+    C --> J[Usage Tracking]
 ```
 
 ## 💻 Tech Stack
@@ -46,8 +53,8 @@ graph TD
 
 ### AI Components
 - Ollama for LLM inference
-- faster_whisper for transcription
-- OpenedAI TTS for speech synthesis
+- `faster_whisper` for transcription
+- `OpenedAI TTS` for speech synthesis [Might switch to `bark` not sure yet]
 
 ## 🚀 Quick Start
 
@@ -68,7 +75,7 @@ cp .env.example .env
 
 3. Run Services
 ```bash
-docker-compose up -d  # Starts Ollama, Redis, and PostgreSQL
+docker-compose up -d  # Starts Ollama, Redis, PostgreSQL, opnenedai-speech and other services check docker-compose.yml for more details
 uvicorn app.main:app --reload  # Starts the FastAPI server
 ```
 

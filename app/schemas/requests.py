@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
+
 class GenerateRequest(BaseModel):
     model: str
     prompt: str
@@ -11,6 +12,7 @@ class GenerateRequest(BaseModel):
     format: Optional[str] = None
     tools: Optional[List[str]] = None
     stream: bool = False
+
 
 class GenerateResponse(BaseModel):
     model: str
@@ -25,10 +27,12 @@ class GenerateResponse(BaseModel):
     prompt_eval_count: Optional[int] = Field(None, alias="prompt_eval_count")
     eval_count: Optional[int] = Field(None, alias="eval_count")
 
+
 class ChatMessage(BaseModel):
     role: str
     content: str
     images: Optional[List[str]] = None
+
 
 class ChatRequest(BaseModel):
     model: str
@@ -54,17 +58,23 @@ class ChatResponse(BaseModel):
     eval_count: Optional[int] = Field(None, alias="eval_count")
     encode: Optional[str] = Field(None, alias="encode")
 
+
 class ModelInfo(BaseModel):
     name: str
-    modified_at: str = Field(..., alias="modified_at")
+    modified_at: Optional[str] = Field(..., alias="modified_at")
     size: int
+    model: str
     digest: str
     details: Dict[str, Any]
+    provider: str
+
 
 class PullRequest(BaseModel):
     name: str
     insecure: Optional[bool] = None
     stream: Optional[bool] = None
+    provider: Optional[str] = 'ollama'
+
 
 class PullResponse(BaseModel):
     status: str
@@ -72,16 +82,20 @@ class PullResponse(BaseModel):
     total: Optional[int] = None
     completed: Optional[int] = None
 
+
 class CreateRequest(BaseModel):
     name: str
     modelfile: str
     stream: Optional[bool] = None
 
+
 class CreateResponse(BaseModel):
     status: str
 
+
 class DeleteRequest(BaseModel):
     name: str
+
 
 class SpeechRequest(BaseModel):
     model: Optional[str] = Field('tts-1', alias="model")

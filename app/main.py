@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from app import db
+
+from app.db.database import db
 from app.api.routes.v1 import endpoints, voice
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -9,11 +10,7 @@ import uvicorn
 from app.websocket.connection import WebSocketConnection
 from app.utils.logger import logger
 
-origins = [
-    "http://localhost:3001",
-    "http://localhost:3000",
-]
-
+origins = settings.CORS_ORIGINS
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,6 +22,7 @@ async def lifespan(app: FastAPI):
     finally:
         await db.disconnect()
         logger.info("📁 File: main.py, Line: 14, Function: lifespan; Status: Application shutdown")
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -43,27 +41,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(endpoints.router, prefix="/api")
 app.include_router(voice.router, prefix="/api/voice")
 
-@app.websocket("/realtime")
+
+@app.websocket_route("/realtime")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time chat"""
-    connection = WebSocketConnection(websocket)
+    connection = WebSocketConnection(websocket, db)
     try:
+        logger.info("🔌 WebSocket client connected")
+        connection.set_model(websocket.query_params["model"])
         await connection.handle_connection()
-    except WebSocketDisconnect:
-        logger.info("🔌 WebSocket client disconnected")
+    except WebSocketDisconnect as e:
+        logger.info(f"🔌 {e.code} WebSocket client disconnected: {e.reason}")
     except Exception as e:
         logger.error(f"❌ WebSocket error: {str(e)}")
     finally:
         await connection.cleanup()
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)

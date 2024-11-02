@@ -134,11 +134,12 @@ dmypy.json
 # templates
 .github/templates/*
 .idea/
-
-venv/
 app.log
-
-.env
 data/cache/
 app/prompts
 airley-ai
+postgres_data
+redis_data
+ollama_models
+speech_cache
+grafana_data
