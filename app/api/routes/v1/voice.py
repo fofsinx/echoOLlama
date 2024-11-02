@@ -7,14 +7,15 @@ from app.utils.logger import logger
 
 router = APIRouter()
 
+
 @router.post("/transcribe")
 async def transcribe_audio(
-    file: UploadFile = File(...),
-    language: str = 'en',
-    task: str = "transcribe",
-    beam_size: int = 5,
-    vad_filter: bool = True,
-    audio_service: AudioService = Depends(get_audio_service)
+        file: UploadFile = File(...),
+        language: str = 'en',
+        task: str = "transcribe",
+        beam_size: int = 5,
+        vad_filter: bool = True,
+        audio_service: AudioService = Depends(get_audio_service)
 ) -> StreamingResponse:
     """
     Transcribe audio file to text using Faster Whisper and stream the results
@@ -24,9 +25,9 @@ async def transcribe_audio(
         # Read file content and encode to base64
         content = await file.read()
         event_id = f"transcribe_{file.filename}"
-        
+
         logger.info(f"🎤 voice.py: Starting transcription for file {file.filename}")
-        
+
         return StreamingResponse(
             audio_service.transcribe_audio(
                 audio_data=content,
@@ -42,13 +43,14 @@ async def transcribe_audio(
         logger.error(f"❌ voice.py: Error in transcription generation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/speech")
 async def speech(
-    input: str,
-    voice: Optional[str] = 'alloy',
-    model: Optional[str] = 'tts-1',
-    response_format: Optional[str] = 'mp3',
-    audio_service: AudioService = Depends(get_audio_service)
+        input: str,
+        voice: Optional[str] = 'alloy',
+        model: Optional[str] = 'tts-1',
+        response_format: Optional[str] = 'mp3',
+        audio_service: AudioService = Depends(get_audio_service)
 ):
     """
     Generate speech from text using TTS service
@@ -56,14 +58,14 @@ async def speech(
     """
     try:
         logger.info(f"🎤 voice.py: Starting speech generation for text: {input[:30]}...")
-        
+
         file_path, cache_key = await audio_service.generate_speech(
             text=input,
             voice=voice,
             model=model,
             response_format=response_format
         )
-        
+
         return FileResponse(
             file_path,
             media_type="audio/mpeg",
@@ -73,7 +75,7 @@ async def speech(
                 "Cache-Control": "no-cache",
             }
         )
-        
+
     except Exception as e:
         logger.error(f"❌ voice.py: Error in speech generation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

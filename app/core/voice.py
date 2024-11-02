@@ -5,38 +5,38 @@ from faster_whisper import WhisperModel
 from typing import Generator
 import asyncio
 import os
-
-router = APIRouter()
 from app.utils.logger import logger
 
+router = APIRouter()
 
 config = Settings()
 
 
-async def get_stt_model():
+def get_stt_model():
     if config.STT_MODEL_CHOICE == "whisper":
         try:
-            STT_MODEL = WhisperModel(
+            stt_model = WhisperModel(
                 model_size_or_path=config.WHISPER_MODEL_SIZE,
-            device=config.WHISPER_DEVICE,
-            compute_type=config.WHISPER_COMPUTE_TYPE,
-            cpu_threads=4,
+                device=config.WHISPER_DEVICE,
+                compute_type=config.WHISPER_COMPUTE_TYPE,
+                cpu_threads=4,
                 num_workers=2
             )
-            return STT_MODEL
+            return stt_model
         except Exception as e:
             logger.error(f"❌ voice.py: Failed to initialize Whisper model: {str(e)}")
             raise
     else:
         raise HTTPException(status_code=500, detail="STT_MODEL_CHOICE not supported")
-    
 
-async def generate_transcription(temp_path: str, language: str, task: str, beam_size: int, vad_filter: bool) -> Generator[str, None, None]: # type: ignore
+
+async def generate_transcription(temp_path: str, language: str, task: str, beam_size: int, vad_filter: bool) -> \
+        Generator[str, None, None]:  # type: ignore
     try:
-        stt_model = await get_stt_model()
+        stt_model = get_stt_model()
         if stt_model is None:
             raise HTTPException(status_code=500, detail="STT_MODEL not initialized")
-        
+
         # Use faster-whisper's streaming API
         segments, info = await asyncio.to_thread(
             stt_model.transcribe,
@@ -47,7 +47,7 @@ async def generate_transcription(temp_path: str, language: str, task: str, beam_
             vad_filter=vad_filter,
             initial_prompt=None
         )
-                
+
         logger.info(f"ℹ️ voice.py: Detected language: {info.language} with probability {info.language_probability:.2f}")
 
         # Stream each segment as it's transcribed

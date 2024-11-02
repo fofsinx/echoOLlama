@@ -1,13 +1,13 @@
-import os
-import tempfile
-import base64
-from typing import Optional, Tuple, Generator
-from datetime import datetime
-import json
 import asyncio
 import hashlib
-from faster_whisper import WhisperModel
+import json
+import os
+import tempfile
+from datetime import datetime
+from typing import Optional, Tuple, Generator
+
 import openai
+from faster_whisper import WhisperModel
 
 from app.config import settings
 from app.core.voice import get_stt_model
@@ -49,7 +49,7 @@ class AudioService:
 
     async def transcribe_audio(
             self,
-            audio_data: str,
+            audio_data: bytes,
             event_id: str,
             language: str = 'en',
             task: str = 'transcribe',
@@ -71,7 +71,7 @@ class AudioService:
                 task=task,
                 beam_size=beam_size,
                 vad_filter=vad_filter,
-                initial_prompt=None
+                initial_prompt=None,
             )
 
             logger.info(
@@ -143,13 +143,12 @@ class AudioService:
             logger.error(f"❌ audio.py: Speech generation failed: {str(e)}")
             raise AudioProcessingError(f"Failed to generate speech: {str(e)}")
 
-    def _save_audio_buffer(self, audio_data: str, event_id: str) -> str:
+    def _save_audio_buffer(self, audio_bytes: bytes, event_id: str) -> str:
         """
         Save audio buffer to temporary file
         📝 File: audio.py, Line: 146, Function: _save_audio_buffer
         """
         try:
-            audio_bytes = base64.b64decode(audio_data)
             temp_path = os.path.join(
                 self.temp_dir,
                 f"{event_id}_{datetime.utcnow().timestamp()}.wav"
