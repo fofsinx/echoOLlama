@@ -1,7 +1,7 @@
 # 🦙 OLlamaGate: Your Open-Source Bridge to AI Power
 > 🌟 Transform your local AI setup into an OpenAI-compatible powerhouse!
 
-![🦙 OLlamaGate Banner](https://th.bing.com/th/id/OIP.VQdoScLwOdGsiJvrnEMiFgHaHa?w=626&h=626&rs=1&pid=ImgDetMain)
+![🦙 OLlamaGate Banner](https://github.com/user-attachments/assets/4b47af5f-44da-4d42-84dd-6a59d46ba2e1)
 
 > ⚠️ **Active Development Alert!** ⚠️
 > 
