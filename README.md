@@ -1,90 +1,122 @@
-# 🦙 LlamaGate: A fusion of Ollama and OpenAI Gateway but open-source
+# 🦙 OLlamaGate: Your Open-Source Bridge to AI Power
+> 🌟 Transform your local AI setup into an OpenAI-compatible powerhouse!
 
-> ⚠️ **WARNING: Work in Progress** ⚠️
+![🦙 OLlamaGate Banner](https://th.bing.com/th/id/OIP.VQdoScLwOdGsiJvrnEMiFgHaHa?w=626&h=626&rs=1&pid=ImgDetMain)
+
+> ⚠️ **Active Development Alert!** ⚠️
 > 
-> This project is currently under active development and is not yet ready for production use. Features may be incomplete, unstable, or subject to significant changes. Use at your own risk.
+> We're cooking up something amazing! While the core functionality is taking shape, some features are still in the oven. Perfect for experiments, but maybe hold off on that production deployment for now! 😉
 
-![🦙 LlamaGate Banner](https://th.bing.com/th/id/OIP.VQdoScLwOdGsiJvrnEMiFgHaHa?w=626&h=626&rs=1&pid=ImgDetMain)
+## 🎯 What's OLlamaGate?
+Imagine having OpenAI's powerful API capabilities, but running entirely on your local machine! That's OLlamaGate - your open-source gateway to AI freedom. We're building a drop-in replacement for OpenAI's API suite, powered by Ollama and other awesome open-source tools.
 
-## 🎯 Mission
-🦙 LlamaGate is an open-source alternative to OpenAI's API suite, providing a unified interface for AI capabilities using Ollama and other open-source tools. It's designed to be a drop-in replacement for OpenAI's API, making it easy to switch from cloud-based to local AI solutions.
+### 🎉 What's Working Now:
 
-> 🚧 **Currently it works as replacement for OpenAI Realtime API** 🚧
->
-> Running inside openai's official realtime api console look like this:
->
-> ![🦙 LlamaGate Banner](https://github.com/user-attachments/assets/5ce20abf-6982-4b6b-a824-58f7d91ef7cd)
+![🦙 OLlamaGate Banner](https://github.com/user-attachments/assets/5ce20abf-6982-4b6b-a824-58f7d91ef7cd)
 
-## 🌟 Features
+- ✅ Connection handling and session management
+- ✅ Real-time event streaming
+- ✅ Redis-based session storage
+- ✅ Basic database interactions
+- ✅ OpenAI compatibility layer
+- ✅ Core WebSocket infrastructure
 
-### Core APIs
-- **Chat Completions** - Real-time chat interactions using Ollama models with streaming support
-- **Audio Transcription** - High-accuracy speech-to-text using Whisper.cpp locally
-- **Text-to-Speech (TTS)** - Natural voice synthesis powered by Opened-Ai/Speech TTS engine
-- **Function Calling** - Support for structured function calls and responses
+### 🚧 On the Roadmap:
+- 📝 Message processing pipeline (In Progress)
+- 🤖 Advanced response generation with client events
+- 🎯 Function calling implementation with client events
+- 🔊 Audio transcription service connection with client events
+- 🗣️ Text-to-speech integration with client events
+- 📊 Usage analytics dashboard
+- 🔐 Enhanced authentication system 
 
-### Technical Features
-- 🔄 Streaming responses (SSE)
-- 🔒 Rate limiting & authentication
-- 📊 Usage tracking & analytics
-- 🎯 Load balancing for multiple Ollama instances
-- 🧪 100% API compatibility with OpenAI
+## 🌟 Features & Capabilities
 
-## 🏗️ Architecture
+### 🎮 Core Services
+- **Real-time Chat** 💬
+  - Streaming responses via websockets
+  - Multi-model support via Ollama
+  - Session persistence
+  - 🎤 Audio Transcription (FASTER_Whisper)
+  - 🗣️ Text-to-Speech (OpenedAI/Speech)
 
+- **Coming Soon** 🔜
+  - 🔧 Function Calling System
+  - 📊 Advanced Analytics
+
+### 🛠️ Technical Goodies
+- ⚡ Lightning-fast response times
+- 🔒 Built-in rate limiting
+- 📈 Usage tracking ready
+- ⚖️ Load balancing for scale
+- 🎯 100% OpenAI API compatibility
+
+## 🏗️ System Architecture
 ```mermaid
 graph TD
-    A[Client] --> B[API Gateway] --> C[Websocket Connection] 
-    C --> D[Chat Service]
-    C --> E[Speech Service]
-    C --> F[Transcription Service]
-    C --> G[Ollama]
-    C --> H[Function Calling Service]
-    C --> I[Rate Limiting Service]
-    C --> J[Usage Tracking]
+    A[Client] --> B[API Gateway]
+    B --> C[WebSocket Manager]
+    C --> D[Session Handler]
+    D --> E[Redis Cache]
+    D --> F[PostgreSQL]
+    C --> G[Service Router]
+    G --> H[Chat Service]
+    G --> I[Speech Service]
+    G --> J[Transcription Service]
+    G --> K[Function Handler]
+    H & I & J --> L[Ollama]
 ```
 
-## 💻 Tech Stack
+## 💻 Tech Stack Spotlight
+### 🎯 Backend Champions
+- 🚀 FastAPI - Lightning-fast API framework
+- 📝 Redis - Blazing-fast caching & session management
+- 🐘 PostgreSQL - Rock-solid data storage
 
-### Backend
-- FastAPI for API
-- Redis for caching
-- PostgreSQL for storage
+### 🤖 AI Powerhouse
+- 🦙 Ollama - Local LLM inference
+- 🎤 faster_whisper - Speech recognition (coming soon)
+- 🗣️ OpenedAI TTS - Voice synthesis (coming soon)
 
-### AI Components
-- Ollama for LLM inference
-- `faster_whisper` for transcription
-- `OpenedAI TTS` for speech synthesis [Might switch to `bark` not sure yet]
+## 🚀 Get Started in 3, 2, 1...
 
-## 🚀 Quick Start
-
-1. Clone and Setup
+1. **Clone & Setup** 📦
 ```bash
-git clone https://github.com/iamharshdev/🦙 LlamaGate.git
-cd 🦙 LlamaGate
+git clone https://github.com/iamharshdev/OLlamaGate.git
+cd OLlamaGate
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
 pip install -r requirements.txt
 ```
 
-2. Environment Configuration
+2. **Environment Setup** ⚙️
 ```bash
 cp .env.example .env
-# Configure your environment variables
+# Update .env with your config - check .env.example for all options!
+make migrate # create db and apply migrations
 ```
 
-3. Run Services
+3. **Launch Time** 🚀
 ```bash
-docker-compose up -d  # Starts Ollama, Redis, PostgreSQL, opnenedai-speech and other services check docker-compose.yml for more details
-uvicorn app.main:app --reload  # Starts the FastAPI server
+# Fire up the services
+docker-compose up -d
+
+# Start the API server
+uvicorn app.main:app --reload
 ```
 
-## 🤝 Contributing
-Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+## 🤝 Join the OLlamaGate Family
+Got ideas? Found a bug? Want to contribute? Check out our [CONTRIBUTING.md](CONTRIBUTING.md) guide and become part of something awesome! We love pull requests! 🎉
+
+## 💡 Project Status Updates
+- 🟢 **Working**: Connection handling, session management, event streaming
+- 🟡 **In Progress**: Message processing, response generation
+- 🔴 **Planned**: Audio services, function calling, analytics
 
 ## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT Licensed - Go wild! See [LICENSE](LICENSE) for the legal stuff.
 
 ---
+*Built with 💖 by the community, for the community*
 
-*Built with 💻 by the open-source community*
+*PS: Star ⭐ us on GitHub if you like what we're building!*
