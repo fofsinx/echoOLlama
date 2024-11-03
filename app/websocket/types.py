@@ -36,6 +36,7 @@ class MessageType(Enum):
 class SessionConfig:
     """Session configuration from documentation"""
     modalities: List[str]
+    id: str
     voice: str
     instructions: Optional[str] = None
     input_audio_format: str = "pcm16"

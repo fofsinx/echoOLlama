@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict
+from sqlalchemy import update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
 from sqlalchemy.future import select
@@ -44,6 +45,13 @@ class Database:
             await session.commit()
             await session.refresh(new_session)
             return new_session
+        
+    async def update_session(self, session_data: Dict) -> Session:
+        """Update session data"""
+        async with self.SessionLocal() as session:
+            logger.info(f"🔄 File: database.py, Function: update_session; Updating session {session_data['id']}")
+            await session.execute(update(Session).where(Session.id == session_data['id']).values(**session_data))
+            await session.commit()
 
     async def get_session(self, session_id: str) -> Optional[Session]:
         """Get session by ID"""
