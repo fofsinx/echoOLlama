@@ -44,11 +44,16 @@ app.add_middleware(
 app.include_router(endpoints.router, prefix="/api")
 app.include_router(voice.router, prefix="/api/voice")
 
-
 @app.websocket_route("/realtime")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time chat"""
-    connection = WebSocketConnection(websocket, db)
+
+    # Get the requested protocols from the client
+    requested_protocols = websocket.headers.get("Sec-WebSocket-Protocol", "").split(", ")
+    
+    logger.info(f"🔌 Requested protocols: {requested_protocols}")
+
+    connection = WebSocketConnection(websocket, db, subprotocol=requested_protocols)
     try:
         logger.info("🔌 WebSocket client connected")
         connection.set_model(websocket.query_params["model"])

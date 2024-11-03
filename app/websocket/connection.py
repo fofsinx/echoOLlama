@@ -21,7 +21,7 @@ class WebSocketConnection:
     and real-time audio/text processing capabilities
     """
 
-    def __init__(self, websocket: WebSocket, db: Database):
+    def __init__(self, websocket: WebSocket, db: Database, subprotocol: Optional[str] = None):
         """
         Initialize WebSocket connection with necessary services
         📝 File: connection.py, Line: 22, Function: __init__
@@ -29,6 +29,7 @@ class WebSocketConnection:
         self.websocket = websocket
         self.db = db
         self.client_id = str(uuid.uuid4())
+        self.subprotocol = subprotocol
         self.handler = WebSocketHandler(websocket, db)
         self.chat_state = ChatStateManager(self.handler.redis, db)
         self.heartbeat_task: Optional[asyncio.Task] = None
@@ -41,7 +42,9 @@ class WebSocketConnection:
         📝 File: connection.py, Line: 35, Function: handle_connection
         """
         try:
-            await self.websocket.accept()
+            await self.websocket.accept(
+                subprotocol=self.subprotocol[0] if self.subprotocol[0] else None
+            )
             self.is_connected = True
 
             session = None
@@ -111,8 +114,6 @@ class WebSocketConnection:
             # Check rate limits
             await self._check_rate_limits()
 
-            logger.info(f"📨 connection.py: Enriched message: {message}")
-
             # Enrich message with session data
             enriched_message = await self._enrich_message(message)
 
@@ -162,7 +163,6 @@ class WebSocketConnection:
             return None
         try:
             message = await self.websocket.receive_json()
-            logger.info(f"📨 connection.py: Received message: {message}")
             # Basic JSON schema validation
             if not isinstance(message, dict):
                 raise WebSocketError("Invalid message format", code=4000)
