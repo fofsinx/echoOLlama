@@ -73,7 +73,7 @@ Perfect for developers who want to:
 ## 🏗️ System Architecture
 
 <a href='https://excalidraw.com/#json=FbCQY2ha_EX6w2CjqK6Mr,lWhsDsgEPXLsSELFBzBxqw' target='_blank'>
-<img src='echoOLlama.png' alt='echoOLlama' />
+<img src='https://preview.redd.it/ollamagate-open-sourced-openai-v0-isuuo6mh7uyd1.png?width=2602&format=png&auto=webp&s=d497e1da5cd93874126e826ec3990a23e5339faa' alt='echoOLlama' />
 </a>
 
 > Click on the image to view the interactive version on Excalidraw!
