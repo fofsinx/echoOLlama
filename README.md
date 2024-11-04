@@ -68,119 +68,15 @@ Perfect for developers who want to:
 - ⚖️ Load balancing for scale
 - 🎯 100% OpenAI API compatibility
 
+
+
 ## 🏗️ System Architecture
-```mermaid
-graph LR
-    classDef userNode fill:#fff,stroke:#333,stroke-width:2
-    classDef processNode fill:#87CEEB,stroke:#333,stroke-width:2,color:black
-    classDef audioNode fill:#98FB98,stroke:#333,stroke-width:2,color:black
-    classDef llmNode fill:#FFA07A,stroke:#333,stroke-width:2,color:black
-    classDef ttsNode fill:#DDA0DD,stroke:#333,stroke-width:2,color:black
-    classDef bufferNode fill:#F0E68C,stroke:#333,stroke-width:2,color:black
-    classDef sessionNode fill:#E6E6FA,stroke:#333,stroke-width:2,color:black
 
-    %% Users
-    Student[("Student")]:::userNode
-    Teacher[("Teacher")]:::userNode
-    Elderly[("Elderly<br>Person")]:::userNode
-    Professional[("Professional")]:::userNode
+<a href='https://excalidraw.com/#json=FbCQY2ha_EX6w2CjqK6Mr,lWhsDsgEPXLsSELFBzBxqw' target='_blank'>
+<img src='echoOLlama.png' alt='echoOLlama' />
+</a>
 
-    %% Core Components
-    WebSocket(("WebSocket<br>Layer")):::processNode
-    AudioProc(("Audio<br>Processing")):::audioNode
-    LLM(("LLM<br>Agent")):::llmNode
-    TTS(("TTS<br>Engine")):::ttsNode
-    Buffer(("Buffer<br>Manager")):::bufferNode
-    Session(("Session<br>Controller")):::sessionNode
-
-    %% Connections
-    Student --> |"Voice Input"| WebSocket
-    Teacher --> |"Voice Input"| WebSocket
-    Elderly --> |"Voice Input"| WebSocket
-    Professional --> |"Voice Input"| WebSocket
-
-    WebSocket --> |"Audio Buffer"| Buffer
-    Buffer --> |"Processed Audio"| AudioProc
-    AudioProc --> |"VAD Detection"| AudioProc
-    AudioProc --> |"Transcription"| LLM
-    LLM --> |"Response"| TTS
-    TTS --> |"Audio Stream"| WebSocket
-    WebSocket --> |"Voice Output"| Student
-    WebSocket --> |"Voice Output"| Teacher
-    WebSocket --> |"Voice Output"| Elderly
-    WebSocket --> |"Voice Output"| Professional
-
-    %% Component Groups
-    subgraph "Real-time Processing Layer"
-        WebSocket
-        Buffer
-        AudioProc
-    end
-
-    subgraph "AI Processing Layer"
-        LLM
-        TTS
-    end
-
-    %% System Notes
-    note1["Each connection starts<br>a new session"]
-    note2["VAD controls when<br>to respond"]
-    note3["Background jobs handle<br>transcription"]
-    note4["Streaming responses<br>reduce latency"]
-    note5["Audio buffers processed<br>in chunks of 20ms"]
-    note6["Context maintained<br>across conversations"]
-    note7["Adaptive response<br>timing system"]
-    note8["Multi-modal context<br>awareness"]
-    note9["Dynamic buffer<br>management"]
-    note10["Session state<br>persistence"]
-
-    %% Technical Annotations
-    noteWebSocket["WebSocket maintains<br>persistent connections"]
-    noteBuffer["Circular buffer with<br>adjustable size"]
-    noteAudio["Real-time VAD with<br>configurable threshold"]
-    noteLLM["Streaming tokens with<br>context window"]
-    noteTTS["Voice cloning &<br>style transfer"]
-
-    %% User Personas
-    noteStudent["Quick learner seeking<br>immediate responses<br>Prefers dynamic pace"]
-    noteTeacher["Needs precise and<br>detailed interactions<br>Values accuracy"]
-    noteElderly["Prefers slower, clearer<br>voice responses<br>Needs patience"]
-    noteProfessional["Requires technical<br>depth and context<br>Time-sensitive"]
-
-    %% Connecting Notes
-    note1 -.-> WebSocket
-    note2 -.-> AudioProc
-    note3 -.-> AudioProc
-    note4 -.-> TTS
-    note5 -.-> Buffer
-    note6 -.-> LLM
-    note7 -.-> AudioProc
-    note8 -.-> LLM
-    note9 -.-> Buffer
-    note10 -.-> Session
-
-    noteWebSocket -.-> WebSocket
-    noteBuffer -.-> Buffer
-    noteAudio -.-> AudioProc
-    noteLLM -.-> LLM
-    noteTTS -.-> TTS
-
-    noteStudent -.-> Student
-    noteTeacher -.-> Teacher
-    noteElderly -.-> Elderly
-    noteProfessional -.-> Professional
-
-    %% System States
-    state1["Initialization"]
-    state2["Processing"]
-    state3["Response"]
-    state4["Idle"]
-
-    state1 -.-> WebSocket
-    state2 -.-> AudioProc
-    state3 -.-> TTS
-    state4 -.-> Buffer
-```
+> Click on the image to view the interactive version on Excalidraw!
 
 ## 💻 Tech Stack Spotlight
 ### 🎯 Backend Champions
