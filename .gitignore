@@ -143,3 +143,4 @@ redis_data
 ollama_models
 speech_cache
 grafana_data
+pilot/models
